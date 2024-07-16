@@ -1,0 +1,55 @@
+[versions]
+java = "17"
+kotlin = "2.0.0"
+
+ksp = "2.0.0-1.0.22"
+
+detekt = "1.23.6"
+dokka = "1.9.20"
+
+maven-publish = "0.29.0"
+build-config = "5.3.5"
+
+autoservice-annotations = "1.1.1"
+autoservice-ksp = "1.2.0"
+
+kotlin-poet = "1.18.1"
+hilt = "2.51.1"
+
+junit = "5.10.2"
+compile-testing = "0.5.1"
+
+[libraries]
+# build
+kotlin-gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-ksp = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
+kotlin-ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
+kotlin-poet = { module = "com.squareup:kotlinpoet", version.ref = "kotlin-poet" }
+kotlin-poet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlin-poet" }
+
+kotlin-dokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
+kotlin-dokka-versioning = { module = "org.jetbrains.dokka:versioning-plugin", version.ref = "dokka" }
+maven-publish = { module = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin", version.ref = "maven-publish" }
+gradle-buildConfig = { module = "com.github.gmazzo.buildconfig:plugin", version.ref = "build-config" }
+detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+
+google-autoService-core = { module = "dev.zacsweers.autoservice:auto-service-ksp", version.ref = "autoservice-ksp" }
+google-autoService-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "autoservice-annotations" }
+
+hilt-core = { module = "com.google.dagger:hilt-core", version.ref = "hilt" }
+
+# testing
+junit = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+kotlin-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }
+
+compileTesting = { module = "dev.zacsweers.kctfork:core", version.ref = "compile-testing" }
+
+[plugins]
+
+[bundles]
+kotlin-poet = [
+   "kotlin-poet",
+   "kotlin-poet-ksp"
+]
