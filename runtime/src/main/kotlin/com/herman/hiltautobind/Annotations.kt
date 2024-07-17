@@ -208,14 +208,26 @@ typealias AutoBindToMap = dagger.multibindings.IntoMap
 typealias AutoBindToSet = dagger.multibindings.IntoSet
 
 /**
- * Use [AutoBindMulibind] instead of [dagger.multibindings.Multibinds] in combination with [AutoFactory] or [AutoBind]
+ * Use [AutoBindValuesToSet] instead of [dagger.multibindings.ElementsIntoSet] in combination with [AutoFactory] or [AutoBind]
+ * to automatically bind a class to a map in a Hilt module. Usage is the same as [dagger.multibindings.ElementsIntoSet]
+ *
+ * Usage of [AutoBindValuesToSet] is required if you want to use [AutoFactory] or [AutoBind]
+ * , otherwise the Dagger annotation processor will pick up the annotated type, which will result in an error.
+ *
+ * @see dagger.multibindings.ElementsIntoSet
+ * @see <a href="https://dagger.dev/multibindings#map-multibindings">Map multibinding</a>
+ */
+typealias AutoBindValuesToSet = dagger.multibindings.ElementsIntoSet
+
+/**
+ * Use [AutoBindMultiBinds] instead of [dagger.multibindings.Multibinds] in combination with [AutoFactory] or [AutoBind]
  * to automatically bind a class to a set in a Hilt module. Usage is the same as [dagger.multibindings.Multibinds]
  *
- * Usage of [AutoBindMulibind] is required if you want to use [AutoFactory] or [AutoBind]
+ * Usage of [AutoBindMultiBinds] is required if you want to use [AutoFactory] or [AutoBind]
  * in combination with [dagger.multibindings.Multibinds], otherwise the Dagger annotation processor will pick up the
  * annotated type, which will result in an error.
  *
  * @see dagger.multibindings.Multibinds
  * @see <a href="https://dagger.dev/multibindings#multibinds">Multibinding</a>
  */
-typealias AutoBindMulibind = dagger.multibindings.Multibinds
+typealias AutoBindMultiBinds = dagger.multibindings.Multibinds
