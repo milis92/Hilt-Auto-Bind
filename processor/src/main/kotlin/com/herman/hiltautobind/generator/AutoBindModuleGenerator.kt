@@ -8,12 +8,12 @@ import com.squareup.kotlinpoet.ksp.toKModifier
 import dagger.Binds
 
 class AutoBindModuleGenerator : HiltAutoBindModuleGenerator<AutoBindSchema>() {
-    override fun buildFunction(schema: AutoBindSchema): FunSpec = with(schema) {
+    override fun buildHiltProvideFunction(schema: AutoBindSchema): FunSpec = with(schema) {
         FunSpec.builder(name = hiltFunctionName)
             .addAnnotation(daggerBindsClassName)
             .addAnnotations(otherAnnotations)
             .addParameter(name = PARAM_IMPLEMENTATION, type = annotatedClass)
-            .addModifiers(hiltModuleVisibility.toKModifier() ?: KModifier.PUBLIC, KModifier.ABSTRACT)
+            .addModifiers(KModifier.ABSTRACT)
             .returns(boundSuperType)
             .build()
     }

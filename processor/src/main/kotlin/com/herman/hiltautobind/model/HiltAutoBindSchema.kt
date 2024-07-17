@@ -1,8 +1,6 @@
 package com.herman.hiltautobind.model
 
-import com.google.devtools.ksp.symbol.KSAnnotation
-import com.google.devtools.ksp.symbol.KSFile
-import com.google.devtools.ksp.symbol.Visibility
+import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 
 const val HILT_MODULE_NAME_SEPARATOR = "_"

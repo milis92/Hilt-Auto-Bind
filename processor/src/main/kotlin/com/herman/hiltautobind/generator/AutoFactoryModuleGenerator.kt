@@ -5,10 +5,11 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.herman.hiltautobind.model.AutoFactorySchema
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toKModifier
 import dagger.Provides
 
 class AutoFactoryModuleGenerator : HiltAutoBindModuleGenerator<AutoFactorySchema>() {
-    override fun buildFunction(schema: AutoFactorySchema): FunSpec = with(schema) {
+    override fun buildHiltProvideFunction(schema: AutoFactorySchema): FunSpec = with(schema) {
         FunSpec.builder(name = hiltFunctionName)
             .addAnnotation(daggerProvidesClassName)
             .addAnnotations(otherAnnotations)
@@ -16,17 +17,16 @@ class AutoFactoryModuleGenerator : HiltAutoBindModuleGenerator<AutoFactorySchema
             .addParameters(annotatedFunctionParameters)
             .returns(annotatedFunctionReturnType)
             .addCode(buildProvideMethodCode(this))
+            .addModifiers(schema.hiltModuleVisibility.toKModifier() ?: KModifier.PUBLIC)
             .build()
     }
 
     private fun FunSpec.Builder.addFactoryParameterIfClass(schema: AutoFactorySchema): FunSpec.Builder =
         if (schema.enclosingElementKind?.classKind?.isClass == true) {
-            schema.enclosingClassName?.let { addParameter(createFactoryParameterSpec(it)) } ?: this
+            schema.enclosingClassName?.let {
+                addParameter(ParameterSpec.builder(FACTORY_PARAMETER_NAME, it).build())
+            } ?: this
         } else this
-
-    private fun createFactoryParameterSpec(className: ClassName): ParameterSpec =
-        ParameterSpec.builder(FACTORY_PARAMETER_NAME, className)
-            .build()
 
     private fun buildProvideMethodCode(schema: AutoFactorySchema): CodeBlock = when {
         schema.enclosingElementKind?.classKind?.isClass == true ->
@@ -68,6 +68,5 @@ class AutoFactoryModuleGenerator : HiltAutoBindModuleGenerator<AutoFactorySchema
         private const val PROVIDES_RETURN_FORMAT_FILE = "return %N(%L);"
 
         private val daggerProvidesClassName = Provides::class.asClassName()
-        private const val PARAM_IMPLEMENTATION = "implementation"
     }
 }

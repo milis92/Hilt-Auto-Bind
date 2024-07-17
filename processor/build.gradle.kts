@@ -10,4 +10,8 @@ dependencies {
     implementation(libs.google.autoService.annotations)
     implementation(libs.bundles.kotlin.poet)
     implementation(libs.hilt.core)
+
+    testImplementation(libs.compileTesting)
+    testImplementation(libs.compileTesting.ksp)
+    testImplementation(libs.hilt.processor)
 }

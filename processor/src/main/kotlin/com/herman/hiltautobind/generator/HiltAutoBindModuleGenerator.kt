@@ -26,7 +26,7 @@ abstract class HiltAutoBindModuleGenerator<T : HiltAutoBindSchema> {
             TypeSpec.interfaceBuilder(className = schema.hiltModuleName)
     }.addAnnotation(daggerModuleClassName)
         .addAnnotation(getInstallInAnnotationSpec(schema))
-        .addFunction(buildFunction(schema))
+        .addFunction(buildHiltProvideFunction(schema))
         .addModifiers(schema.hiltModuleVisibility.toKModifier() ?: KModifier.PUBLIC)
         .build()
 
@@ -42,7 +42,7 @@ abstract class HiltAutoBindModuleGenerator<T : HiltAutoBindSchema> {
                 .build()
         }
 
-    abstract fun buildFunction(schema: T): FunSpec
+    abstract fun buildHiltProvideFunction(schema: T): FunSpec
 
     companion object {
         private val daggerModuleClassName = dagger.Module::class.asClassName()

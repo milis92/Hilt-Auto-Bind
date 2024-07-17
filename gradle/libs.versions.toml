@@ -2,7 +2,7 @@
 java = "17"
 kotlin = "2.0.0"
 
-ksp = "2.0.0-1.0.22"
+ksp = "2.0.0-1.0.23"
 
 detekt = "1.23.6"
 dokka = "1.9.20"
@@ -38,6 +38,7 @@ google-autoService-core = { module = "dev.zacsweers.autoservice:auto-service-ksp
 google-autoService-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "autoservice-annotations" }
 
 hilt-core = { module = "com.google.dagger:hilt-core", version.ref = "hilt" }
+hilt-processor = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 
 # testing
 junit = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -45,6 +46,7 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 kotlin-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 
 compileTesting = { module = "dev.zacsweers.kctfork:core", version.ref = "compile-testing" }
+compileTesting-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "compile-testing" }
 
 [plugins]
 
