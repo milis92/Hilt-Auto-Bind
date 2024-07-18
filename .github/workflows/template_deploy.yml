@@ -66,6 +66,7 @@ jobs:
       - uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          title: ${{ needs.deploy.outputs.version }}
+          title: v${{ needs.deploy.outputs.version }}
+          automatic_release_tag: v${{ needs.deploy.outputs.version }}
           prerelease: ${{ inputs.STAGE  == 'rc' }}
           draft: ${{ inputs.STAGE  == 'dev' }}
