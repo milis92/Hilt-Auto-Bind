@@ -22,6 +22,7 @@ jobs:
     name: Deploy
     needs:
       - verify
+      - test
     uses: ./.github/workflows/template_deploy.yml
     with:
       STAGE: final
