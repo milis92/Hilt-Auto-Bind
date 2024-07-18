@@ -1,6 +1,5 @@
 package com.herman.hiltautobind
 
-import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -8,7 +7,7 @@ import kotlin.test.Test
 
 @OptIn(ExperimentalCompilerApi::class)
 class HiltAutoBindTest {
-    companion object {
+    private companion object {
         @JvmField
         @RegisterExtension
         var compilerExtension = KotlinCompilationTestExtension()
@@ -18,7 +17,8 @@ class HiltAutoBindTest {
     fun simpleBindPreservesDaggerAnnotations() {
         // Given
         val sourceFile = SourceFile.kotlin(
-            name = "Main.kt", contents = """
+            name = "Main.kt",
+            contents = """
             import com.herman.hiltautobind.AutoBind
             import javax.inject.Singleton
             import javax.inject.Named
@@ -31,15 +31,33 @@ class HiltAutoBindTest {
             """.trimIndent()
         )
 
-        // When
-        val compilationResult = compilerExtension.compile(listOf(sourceFile))
+        val expectedContent = ExpectedContent(
+            """
+            import dagger.Binds
+            import dagger.Module
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import javax.inject.Singleton
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public interface Something_SingletonComponent_Module {
+              @Binds
+              @Singleton
+              public fun bindSomething(implementation: SomethingImpl): Something
+            }
+            """.trimIndent()
+        )
 
         // Then
-        assert(compilationResult.exitCode == KotlinCompilation.ExitCode.OK)
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(FileName("kotlin/Something_SingletonComponent_Module.kt") to expectedContent)
+        )
     }
 
     @Test
-    fun simpleBindPreservesBoundTypeVisibility(){
+    fun simpleBindPreservesBoundTypeVisibility() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt", contents = """
@@ -55,15 +73,33 @@ class HiltAutoBindTest {
             """.trimIndent()
         )
 
-        // When
-        val compilationResult = compilerExtension.compile(listOf(sourceFile))
+        val expectedContent = ExpectedContent(
+            """
+            import dagger.Binds
+            import dagger.Module
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import javax.inject.Singleton
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            internal interface Something_SingletonComponent_Module {
+              @Binds
+              @Singleton
+              public fun bindSomething(implementation: SomethingImpl): Something
+            }
+            """.trimIndent()
+        )
 
         // Then
-        assert(compilationResult.exitCode == KotlinCompilation.ExitCode.OK)
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(FileName("kotlin/Something_SingletonComponent_Module.kt") to expectedContent)
+        )
     }
 
     @Test
-    fun simpleBindBindsToSpecificSuperType(){
+    fun simpleBindBindsToSpecificSuperType() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt", contents = """
@@ -80,15 +116,33 @@ class HiltAutoBindTest {
             """.trimIndent()
         )
 
-        // When
-        val compilationResult = compilerExtension.compile(listOf(sourceFile))
+        val expectedContent = ExpectedContent(
+            """
+            import dagger.Binds
+            import dagger.Module
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import javax.inject.Singleton
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public interface Another_SingletonComponent_Module {
+              @Binds
+              @Singleton
+              public fun bindAnother(implementation: SomethingImpl): Another
+            }
+            """.trimIndent()
+        )
 
         // Then
-        assert(compilationResult.exitCode == KotlinCompilation.ExitCode.OK)
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(FileName("kotlin/Another_SingletonComponent_Module.kt") to expectedContent)
+        )
     }
 
     @Test
-    fun simpleBindBindsToFirstSuperType(){
+    fun simpleBindBindsToFirstSuperType() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt", contents = """
@@ -105,15 +159,33 @@ class HiltAutoBindTest {
             """.trimIndent()
         )
 
-        // When
-        val compilationResult = compilerExtension.compile(listOf(sourceFile))
+        val expectedContent = ExpectedContent(
+            """
+            import dagger.Binds
+            import dagger.Module
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import javax.inject.Singleton
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public interface Something_SingletonComponent_Module {
+              @Binds
+              @Singleton
+              public fun bindSomething(implementation: SomethingImpl): Something
+            }
+            """.trimIndent()
+        )
 
         // Then
-        assert(compilationResult.exitCode == KotlinCompilation.ExitCode.OK)
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(FileName("kotlin/Something_SingletonComponent_Module.kt") to expectedContent)
+        )
     }
 
     @Test
-    fun simpleBindThrowsErrorWhenNoSuperType(){
+    fun simpleBindBindsToItselfWhenThereIsNoSupertype() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt", contents = """
@@ -127,10 +199,28 @@ class HiltAutoBindTest {
             """.trimIndent()
         )
 
-        // When
-        val compilationResult = compilerExtension.compile(listOf(sourceFile))
+        val expectedContent = ExpectedContent(
+            """
+            import dagger.Binds
+            import dagger.Module
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import javax.inject.Singleton
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public interface SomethingImpl_SingletonComponent_Module {
+              @Binds
+              @Singleton
+              public fun bindSomethingImpl(implementation: SomethingImpl): SomethingImpl
+            }
+            """.trimIndent()
+        )
 
         // Then
-        assert(compilationResult.exitCode == KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(FileName("kotlin/SomethingImpl_SingletonComponent_Module.kt") to expectedContent)
+        )
     }
 }

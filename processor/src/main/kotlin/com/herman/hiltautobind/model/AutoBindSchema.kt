@@ -6,16 +6,13 @@ import com.herman.hiltautobind.AutoBind
 import com.herman.hiltautobind.TestAutoBind
 import com.herman.hiltautobind.TypesCollection
 import com.herman.hiltautobind.kotlinpoet.toUnwrappedAnnotationSpec
-import com.squareup.kotlinpoet.AnnotationSpec
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.asClassName
-import com.squareup.kotlinpoet.asTypeName
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 
 class AutoBindSchema private constructor(
     override val containingFile: KSFile,
-    val annotatedClass: ClassName,
+    val annotatedClass: KSClassDeclaration,
     override val autoBindAnnotation: KSAnnotation,
     override val otherAnnotations: List<AnnotationSpec>,
     override val hiltModuleVisibility: Visibility,
@@ -25,7 +22,7 @@ class AutoBindSchema private constructor(
         containingFile = requireNotNull(classDeclaration.containingFile) {
             "'${classDeclaration.qualifiedName}' class declaration is not contained in file"
         },
-        annotatedClass = classDeclaration.toClassName(),
+        annotatedClass = classDeclaration,
         autoBindAnnotation = classDeclaration.annotations.first { annotations ->
             annotations in bindAnnotations
         },
@@ -44,7 +41,8 @@ class AutoBindSchema private constructor(
             it != (autoBindAnnotation.getDefaultArgument(
                 autoBindAnnotation.getBoundSuperTypeArgumentName
             ) as KSType).toClassName()
-        } ?: annotatedClass
+        } ?: annotatedClass.superTypes.map { it.resolve().toClassName() }.firstOrNull { it != ANY }
+        ?: annotatedClass.toClassName()
 
     override val hiltComponent: ClassName
         get() = autoBindAnnotation.getArgument(autoBindAnnotation.getHiltComponentArgumentName)?.let {
@@ -76,7 +74,7 @@ class AutoBindSchema private constructor(
         get() = autoBindAnnotation.annotationType.toTypeName() == TestAutoBind::class.asTypeName()
 
     override val hiltFunctionName: String
-        get() = "$BIND_METHOD_NAME_PREFIX${annotatedClass.simpleName}"
+        get() = "$BIND_METHOD_NAME_PREFIX${boundSuperType.simpleName}"
 
     private val KSAnnotation.getBoundSuperTypeArgumentName: String
         get() = when (annotationType.toTypeName()) {
