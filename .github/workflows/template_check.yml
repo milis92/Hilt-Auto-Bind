@@ -1,0 +1,44 @@
+name: Check
+
+on:
+  workflow_call:
+
+jobs:
+  verify:
+    name: Verify gradle plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gradle/actions/wrapper-validation@v3
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs:
+      - verify
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'adopt'
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: false
+      - run: ./gradlew check
+      - name: Merge reports
+        if: failure()
+        uses: microsoft/sarif-actions@v0.1
+        with:
+          command: "merge build/reports/*/*/*.sarif --recurse true --merge-runs --output-directory=build/reports --output-file=merged.sarif"
+      - uses: reviewdog/action-setup@v1
+        if: failure()
+      - name: Upload reviewdog report
+        if: failure()
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat build/reports/merged.sarif | reviewdog -f=sarif -reporter=github-check -level=warning -name="quality checks"
+
