@@ -60,7 +60,8 @@ class HiltAutoBindTest {
     fun simpleBindPreservesBoundTypeVisibility() {
         // Given
         val sourceFile = SourceFile.kotlin(
-            name = "Main.kt", contents = """
+            name = "Main.kt",
+            contents = """
             import com.herman.hiltautobind.AutoBind
             import javax.inject.Singleton
             import javax.inject.Named
@@ -102,7 +103,8 @@ class HiltAutoBindTest {
     fun simpleBindBindsToSpecificSuperType() {
         // Given
         val sourceFile = SourceFile.kotlin(
-            name = "Main.kt", contents = """
+            name = "Main.kt",
+            contents = """
             import com.herman.hiltautobind.AutoBind
             import javax.inject.Singleton
             import javax.inject.Named
@@ -145,7 +147,8 @@ class HiltAutoBindTest {
     fun simpleBindBindsToFirstSuperType() {
         // Given
         val sourceFile = SourceFile.kotlin(
-            name = "Main.kt", contents = """
+            name = "Main.kt",
+            contents = """
             import com.herman.hiltautobind.AutoBind
             import javax.inject.Singleton
             import javax.inject.Named
@@ -188,7 +191,8 @@ class HiltAutoBindTest {
     fun simpleBindBindsToItselfWhenThereIsNoSupertype() {
         // Given
         val sourceFile = SourceFile.kotlin(
-            name = "Main.kt", contents = """
+            name = "Main.kt",
+            contents = """
             import com.herman.hiltautobind.AutoBind
             import javax.inject.Singleton
             import javax.inject.Named

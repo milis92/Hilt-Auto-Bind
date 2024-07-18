@@ -8,10 +8,10 @@ import com.herman.hiltautobind.TypesCollection
 import com.herman.hiltautobind.kotlinpoet.toParameterSpec
 import com.herman.hiltautobind.kotlinpoet.toUnwrappedAnnotationSpec
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 
+@Suppress("LongParameterList")
 class AutoFactorySchema(
     override val containingFile: KSFile,
     val annotatedFunctionName: String,

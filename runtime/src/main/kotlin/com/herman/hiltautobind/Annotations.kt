@@ -93,8 +93,9 @@ annotation class TestAutoBind(
 )
 
 /**
- * AutoFactory is an annotation that can be used to automatically generate a biding for a class, based on the factory function
- * In other words generates the entire hilt module based on a simple function, without the Module boilerplate.
+ * AutoFactory is an annotation that can be used to automatically generate a biding for a class,
+ * based on the factory function. In other words generates the entire hilt module based on a simple function,
+ * without the Module boilerplate.
  *
  * ## Usage
  * Annotate any function with `@AutoFactory` to generate a Hilt module that binds the

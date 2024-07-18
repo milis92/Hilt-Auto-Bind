@@ -7,7 +7,6 @@ import com.herman.hiltautobind.generator.AutoBindModuleGenerator
 import com.herman.hiltautobind.generator.AutoFactoryModuleGenerator
 import com.herman.hiltautobind.visitors.AutoBindVisitor
 import com.herman.hiltautobind.visitors.AutoFactoryVisitor
-import java.io.File
 
 @AutoService(SymbolProcessorProvider::class)
 class HiltAutoBindSymbolProcessorProvider : SymbolProcessorProvider {
@@ -39,4 +38,3 @@ internal class HiltAutoBindSymbolProcessor(
         }
     }
 }
-

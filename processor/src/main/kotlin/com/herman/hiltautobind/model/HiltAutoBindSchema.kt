@@ -19,7 +19,7 @@ interface HiltAutoBindSchema {
 
     enum class HiltModuleType {
         OBJECT,
-        INTERFACE;
+        INTERFACE
     }
 }
 

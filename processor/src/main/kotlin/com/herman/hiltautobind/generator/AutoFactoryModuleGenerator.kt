@@ -26,7 +26,9 @@ class AutoFactoryModuleGenerator : HiltAutoBindModuleGenerator<AutoFactorySchema
             schema.enclosingClassName?.let {
                 addParameter(ParameterSpec.builder(FACTORY_PARAMETER_NAME, it).build())
             } ?: this
-        } else this
+        } else {
+            this
+        }
 
     private fun buildProvideMethodCode(schema: AutoFactorySchema): CodeBlock = when {
         schema.enclosingElementKind?.classKind?.isClass == true ->

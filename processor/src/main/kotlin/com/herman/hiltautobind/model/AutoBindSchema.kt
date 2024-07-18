@@ -38,11 +38,13 @@ class AutoBindSchema private constructor(
         get() = autoBindAnnotation.getArgument(autoBindAnnotation.getBoundSuperTypeArgumentName)?.let {
             (it as? KSType)?.toClassName()
         }.takeIf {
-            it != (autoBindAnnotation.getDefaultArgument(
-                autoBindAnnotation.getBoundSuperTypeArgumentName
-            ) as KSType).toClassName()
+            it != (
+                autoBindAnnotation.getDefaultArgument(
+                    autoBindAnnotation.getBoundSuperTypeArgumentName
+                ) as KSType
+                ).toClassName()
         } ?: annotatedClass.superTypes.map { it.resolve().toClassName() }.firstOrNull { it != ANY }
-        ?: annotatedClass.toClassName()
+            ?: annotatedClass.toClassName()
 
     override val hiltComponent: ClassName
         get() = autoBindAnnotation.getArgument(autoBindAnnotation.getHiltComponentArgumentName)?.let {

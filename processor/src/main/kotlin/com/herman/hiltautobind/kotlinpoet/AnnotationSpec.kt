@@ -1,3 +1,4 @@
+@file:Suppress("all")
 package com.herman.hiltautobind.kotlinpoet
 
 import com.squareup.kotlinpoet.ksp.toClassName

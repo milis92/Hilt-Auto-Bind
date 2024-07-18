@@ -17,7 +17,8 @@ class HiltAutoFactoryTest {
     fun simpleFactoryPreservesOriginalArguments() {
         // Given
         val sourceFile = SourceFile.kotlin(
-            name = "Main.kt", contents = """
+            name = "Main.kt",
+            contents = """
             import com.herman.hiltautobind.AutoFactory
             import javax.inject.Singleton
             
@@ -88,7 +89,8 @@ class HiltAutoFactoryTest {
     fun simpleFactoryPreservesDaggerAnnotations() {
         // Given
         val sourceFile = SourceFile.kotlin(
-            name = "Main.kt", contents = """
+            name = "Main.kt",
+            contents = """
             import com.herman.hiltautobind.AutoFactory
             import javax.inject.Singleton
             import javax.inject.Named
@@ -153,8 +155,10 @@ class HiltAutoFactoryTest {
         compilerExtension.compileAndAssert(
             sources = listOf(sourceFile),
             expectedContent = mapOf(
-                FileName("kotlin/ProvidesSomething_SingletonComponent_AutoFactoryModule.kt") to expectedSomethingProvider,
-                FileName("kotlin/ProvidesSomethingElse_SingletonComponent_AutoFactoryModule.kt") to expectedSomethingElseProvider
+                FileName("kotlin/ProvidesSomething_SingletonComponent_AutoFactoryModule.kt")
+                    to expectedSomethingProvider,
+                FileName("kotlin/ProvidesSomethingElse_SingletonComponent_AutoFactoryModule.kt")
+                    to expectedSomethingElseProvider
             )
         )
     }
@@ -163,7 +167,8 @@ class HiltAutoFactoryTest {
     fun simpleFactoryPreservesCustomAnnotations() {
         // Given
         val sourceFile = SourceFile.kotlin(
-            name = "Main.kt", contents = """
+            name = "Main.kt",
+            contents = """
             import com.herman.hiltautobind.AutoFactory
             import javax.inject.Singleton
             import javax.inject.Named
@@ -212,10 +217,10 @@ class HiltAutoFactoryTest {
 
     @Test
     fun simpleFactoryPreservesMultibindingAnnotations() {
-
         // Given
         val sourceFile = SourceFile.kotlin(
-            name = "Main.kt", contents = """
+            name = "Main.kt",
+            contents = """
             import com.herman.hiltautobind.AutoFactory
             import javax.inject.Singleton
             import com.herman.hiltautobind.AutoBindToSet
@@ -283,8 +288,10 @@ class HiltAutoFactoryTest {
         compilerExtension.compileAndAssert(
             sources = listOf(sourceFile),
             expectedContent = mapOf(
-                FileName("kotlin/ProvideFactory_SingletonComponent_AutoFactoryModule.kt") to expectedProvideFactory,
-                FileName("kotlin/ProvidesSomething_SingletonComponent_AutoFactoryModule.kt") to expectedSomethingProvider
+                FileName("kotlin/ProvideFactory_SingletonComponent_AutoFactoryModule.kt")
+                    to expectedProvideFactory,
+                FileName("kotlin/ProvidesSomething_SingletonComponent_AutoFactoryModule.kt")
+                    to expectedSomethingProvider
             )
         )
     }
@@ -293,7 +300,8 @@ class HiltAutoFactoryTest {
     fun simpleFactoryPreservesTypealiasOfCustomAnnotation() {
         // Given
         val sourceFile = SourceFile.kotlin(
-            name = "Main.kt", contents = """
+            name = "Main.kt",
+            contents = """
             import com.herman.hiltautobind.AutoFactory
             import javax.inject.Singleton
             import javax.inject.Named
@@ -333,7 +341,9 @@ class HiltAutoFactoryTest {
         // Then
         compilerExtension.compileAndAssert(
             sources = listOf(sourceFile),
-            expectedContent = mapOf(FileName("kotlin/ProvidesSomething_SingletonComponent_AutoFactoryModule.kt") to expectedContent)
+            expectedContent = mapOf(
+                FileName("kotlin/ProvidesSomething_SingletonComponent_AutoFactoryModule.kt") to expectedContent
+            )
         )
     }
 
@@ -341,7 +351,8 @@ class HiltAutoFactoryTest {
     fun simpleFactoryPreservesFactoryFunctionVisibility() {
         // Given
         val sourceFile = SourceFile.kotlin(
-            name = "Main.kt", contents = """
+            name = "Main.kt",
+            contents = """
             import com.herman.hiltautobind.AutoFactory
             import javax.inject.Singleton
             
@@ -375,7 +386,9 @@ class HiltAutoFactoryTest {
         // Then
         compilerExtension.compileAndAssert(
             sources = listOf(sourceFile),
-            expectedContent = mapOf(FileName("kotlin/ProvidesSomething_SingletonComponent_AutoFactoryModule.kt") to expectedContent)
+            expectedContent = mapOf(
+                FileName("kotlin/ProvidesSomething_SingletonComponent_AutoFactoryModule.kt") to expectedContent
+            )
         )
     }
 
@@ -383,7 +396,8 @@ class HiltAutoFactoryTest {
     fun simpleFactoryCreatesFactoryWhenPartOfTheClass() {
         // Given
         val sourceFile = SourceFile.kotlin(
-            name = "Main.kt", contents = """
+            name = "Main.kt",
+            contents = """
             import com.herman.hiltautobind.AutoFactory
             import javax.inject.Singleton
             
@@ -417,7 +431,9 @@ class HiltAutoFactoryTest {
         // Then
         compilerExtension.compileAndAssert(
             sources = listOf(sourceFile),
-            expectedContent = mapOf(FileName("kotlin/providesSomething_SingletonComponent_AutoFactoryModule.kt") to expectedContent)
+            expectedContent = mapOf(
+                FileName("kotlin/providesSomething_SingletonComponent_AutoFactoryModule.kt") to expectedContent
+            )
         )
     }
 }

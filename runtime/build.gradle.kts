@@ -2,6 +2,6 @@ plugins {
     `kgc-jvm-module`
 }
 
-dependencies{
+dependencies {
     implementation(libs.hilt.core)
 }

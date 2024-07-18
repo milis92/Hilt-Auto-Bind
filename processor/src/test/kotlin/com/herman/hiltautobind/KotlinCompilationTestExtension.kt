@@ -32,14 +32,13 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteRecursively
 import kotlin.test.assertEquals
 
-
 @OptIn(ExperimentalCompilerApi::class)
 class KotlinCompilationTestExtension(
     private val cleanUp: Boolean = true,
     private val incrementalKsp: Boolean = true,
 ) : BeforeAllCallback, BeforeEachCallback, AfterAllCallback {
 
-    private lateinit var compilerOutputDir : Path
+    private lateinit var compilerOutputDir: Path
     private lateinit var compilerWorkDirectory: Path
 
     private lateinit var compiler: KotlinCompilation
@@ -86,7 +85,7 @@ class KotlinCompilationTestExtension(
         compiler.sources = sources
 
         val compilationResult = compiler.compile()
-        expectedContent.forEach{
+        expectedContent.forEach {
             val file = compiler.kspSourcesDir.resolve(it.key.name)
             assertEquals(it.value.content, file.readText().trim())
         }

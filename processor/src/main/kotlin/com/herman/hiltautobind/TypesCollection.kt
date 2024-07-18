@@ -15,7 +15,7 @@ class TypesCollection(
 
     operator fun contains(annotation: KSAnnotation): Boolean =
         annotation.shortName.asString() in simpleNames &&
-                annotation.annotationType.resolve().toClassName() in classNames
+            annotation.annotationType.resolve().toClassName() in classNames
 
     companion object {
         fun of(vararg types: KClass<*>): TypesCollection = TypesCollection(types.toList())
