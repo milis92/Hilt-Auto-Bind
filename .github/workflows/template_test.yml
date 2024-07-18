@@ -26,9 +26,5 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: false
-      - uses: actions/cache@v4
-        with:
-          path: ~/.konan/**/*
-          key: kotlin-konan-${{ runner.os }}
       - name: Run integration tests
-        run: ./gradlew -p krang-test allTests --continue
+        run: ./gradlew test --continue

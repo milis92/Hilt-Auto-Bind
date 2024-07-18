@@ -13,5 +13,4 @@ tasks.register("detektAll", Detekt::class) {
 
     exclude("**/.idea/**")
     exclude("**/build/**")
-    exclude("**/krang-test/**")
 }
