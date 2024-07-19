@@ -5,160 +5,372 @@
 
 [![Maven metadata URL](https://img.shields.io/maven-metadata/v?label=Release&metadataUrl=https://repo1.maven.org/maven2/com/github/milis92/hiltautobind/processor/maven-metadata.xml)](https://repo1.maven.org/maven2/com/github/milis92/hiltautobind/processor/)
 
-KSP Processor that streamlines working with Hilt by generating Hilt modules with minimal boilerplate.
+KSP Processor that generates Hilt modules with minimal boilerplate
 
 # How does it work
 
 Hilt AutoBind has two main concepts:
 
-1. SuperType Binding that you can use to automatically bind a class to a supertype
-2. Factory function that you can use to provide a dependency with a simple function
+1. `@AutoBind` annotation that you can use to bind a class to a specified supertype
+2. `@AutoFactory` annotation that you can use to generate a Hilt module based on a simple factory function
 
-## Automatic Binding
+# `@AutoBind`
 
-`@AutoBind` is an annotation that can be used to automatically bind a class to a specific supertype in a Hilt module,
-without having to manually write the entire module
+Annotate a class with `@AutoBind` to generate a module with a binding for the specified supertype.
 
-Consider following example with Hilt without `AutoBind`:
+## Why AutoBind?
 
-```kotlin
-import dagger.Module
-import dagger.Binds
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+`@AutoBind` works similarly as `dagger.Inject`, with a difference being that the dagger with
+`@Inject` binds a type explicitly to itself, while `@AutoBind` binds a type to a specified supertype if any.
 
-interface Foo
-class FooImpl @Inject constructor() : Foo
+For example:
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class FooModule {
-    @Binds
-    abstract fun bindFoo(fooImpl: FooImpl): Foo
-}
-```
+#### With dagger:
 
-With `AutoBind`, you can achieve the same result with following code:
+ ```kotlin
+ interface Something
 
-```kotlin
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import com.github.milis92.hiltautobind.AutoBind
+@Singleton
+class SomethingImpl @Inject constructor() : Something
+ ```
 
-interface Foo
+___Dagger binds SomethingImpl to SomethingImpl, Something __cannot be used__ as an injected dependency___
 
+#### With AutoBind:
+
+ ```kotlin
+ interface Something
+
+@Singleton
 @AutoBind
-class FooImpl @Inject constructor() : Foo
-```
+class SomethingImpl @Inject constructor() : Something
+ ```
 
-Hilt module will be generated automatically for you.
+___Dagger binds SomethingImpl to Something, Something __can be used__ as an injected dependency___
+
+## Usage
+
+### Simple singleton binding
+
+Simply annotate your class with `@AutoBind`
+
+ ```kotlin
+ interface Something
+
+@Singleton
+@AutoBind
+class SomethingImpl @Inject constructor() : Something
+ ```
+
+The annotation processor will generate a following Hilt module
+
+ ```kotlin
+ @Module
+@InstallIn(SingletonComponent::class)
+interface SomethingImpl_SingletonComponent_Module {
+    @Binds
+    @Singleton
+    fun bindSomethingImpl(implementation: SomethingImpl): Something
+}
+  ```
+
+### Specifying different Hilt component
+
+You can specify a different Hilt component using the `component` parameter.
+
+ ```kotlin
+ @Singleton
+@AutoBind(component = ActivityRetainedComponent::class)
+class SomethingImpl @Inject constructor() : Something
+ ```
+
+The annotation processor will generate a following Hilt module
+
+ ```kotlin
+ @Module
+@InstallIn(ActivityRetainedComponent::class)
+interface SomethingImpl_ActivityRetainedComponent_Module {
+    @Binds
+    @Singleton
+    fun bindSomethingImpl(implementation: SomethingImpl): Something
+}
+ ```
 
 ### Multiple supertypes
 
-If the class has multiple supertypes, you can specify the supertype to bind to using the `superType` parameter.
-Otherwise, the first supertype will be used. If class has no super types, the annotation processor will throw an error.
+If the class has multiple supertypes, the first super type will be used by default.
+If you want to bind to a specific supertype, you can specify it using the `superType` parameter.
+___Note that if the class has no super types, the annotation processor will bind a type to itself.___
 
-```kotlin
-interface Foo
-interface Bar
+ ```kotlin
+ interface Something
+interface Another
 
-@AutoBind(superType = Foo::class)
-class FooBarImpl @Inject constructor() : Foo, Bar
-```
+@Singleton
+@AutoBind(superType = Another::class)
+class SomethingImpl @Inject constructor() : Something, Another
+ ```
+
+The annotation processor will generate a following Hilt module
+
+ ```kotlin
+ @Module
+@InstallIn(SingletonComponent::class)
+interface SomethingImpl_SingletonComponent_Module {
+    @Binds
+    @Singleton
+    fun bindSomethingImpl(implementation: SomethingImpl): Another
+}
+ ```
+
+### Multibindings
+
+By default, the annotation processor binds a value as an instance of the specified supertype.
+For dagger multibindings, you can bind a value to a set or a map of supertypes using the [`target`][AutoBindTarget]
+parameter.
+
+ ```kotlin
+ interface Something
+interface Another
+
+@Singleton
+@AutoBind(target = AutoBindTarget.SET) // or AutoBindTarget.MAP
+class SomethingImpl @Inject constructor() : Something, Another
+ ```
+
+The annotation processor will generate a following Hilt module
+
+ ```kotlin
+ @Module
+@InstallIn(SingletonComponent::class)
+interface SomethingImpl_SingletonComponent_Module {
+    @Binds
+    @IntoSet
+    fun bindSomethingImpl(implementation: SomethingImpl): Something
+ ```
 
 ### Visibility
 
 The generated module will have the same visibility as the annotated class.
 
-## Factory function
+ ```kotlin
+ interface Something
 
-`AutoFactory` is an annotation that can be used to automatically generate a biding for a class, based on the factory
-function
-In other words generates the entire hilt module based on a simple function, without the Module boilerplate.
+@AutoBind
+internal class SomethingImpl : Something
+ ```
 
-Consider following example with Hilt without FactoryFunction:
+The annotation processor will generate a following Hilt module
 
-```kotlin
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+ ```kotlin
+ @Module
+@InstallIn(SingletonComponent::class)
+internal interface SomethingImpl_SingletonComponent_Module {
+    @Binds
+    fun bindSomethingImpl(implementation: SomethingImpl): Something
+}
+```
 
-interface Foo
+# `@AutoFactory`
 
-class SpecificFoo @Inject constructor() : Foo
+Annotate a function with `@AutoFactory` to generate a Hilt module that binds a value of a function return type
+
+## Why AutoFactory?
+
+`@AutoFactory` works similarly as `[@dagger.Provides]`, with a difference being that the dagger with `@Provides`
+requires a function to be wrapped in a module, with `@AutoFactory` that module is generated automatically.
+
+#### With dagger:
+
+ ```kotlin
+class SomethingImpl(someInt: Int)
 
 @Module
 @InstallIn(SingletonComponent::class)
-object FooModule {
+object ProvidesSomething_SingletonComponent_AutoFactoryModule {
     @Provides
-    fun provideFoo(): Foo {
-        //Do some configuration etc
-        return SpecificFoo()
-    }
+    @Singleton
+    fun provideProvidesSomething(): Something {
+        val calculateSomething = 1 + 1
+        return SomethingImpl(calculateSomething)
+    };
 }
+ ```
 
+___Dagger requires a module to be created and a function to be annotated with `@Provides`___
 
-```
+#### With AutoFactory:
 
-With FactoryFunction, you can achieve the same result with following code:
+ ```kotlin
+class SomethingImpl(someInt: Int)
 
-```kotlin
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import com.github.milis92.hiltautobind.AutoFactory
-
-interface Foo
-
-class SpecificFoo @Inject constructor() : Foo
-
+@Singleton
 @AutoFactory
-fun Foo(): Foo {
-    // Do some configuration and provide the Foo
-    return SpecificFoo()
+fun SomethingFactory(): Something {
+    val calculateSomething = 1 + 1
+    return SomethingImpl(calculatesSomething)
 }
-```
+ ```
 
-Hilt module will be generated automatically for you.
+___The annotation processor generates a module for the `SomethingImpl` class automatically___
 
-### Component
+## Usage
 
-By default, the factory is generated for the `SingletonComponent`.
-You can specify a different component using the `component` parameter.
+### Simple singleton binding
+
+Simply annotate your function with `AutoFactory`
+
+ ```kotlin
+ interface Something
+
+@Singleton
+@AutoFactory
+fun ProvidesSomethingFactory(): Something = SomethingImpl(someString)
+
+class SomethingImpl(string: String) : Something
+ ```
+
+The annotation processor will generate a following Hilt module
+
+ ```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+public object ProvidesSomething_SingletonComponent_AutoFactoryModule {
+    @Provides
+    @Singleton
+    public fun provideProvidesSomething(): Something = ProvidesSomethingFactory();
+ ```
+
+### Specifying different Hilt component
+
+You can specify a different Hilt component using the `component` parameter.
+
+ ```kotlin
+ interface Something
+
+@Singleton
+@AutoFactory(component = ActivityRetainedComponent::class)
+fun ProvidesSomethingFactory(): Something = SomethingImpl(someString)
+
+class SomethingImpl(string: String) : Something
+ ```
+
+The annotation processor will generate a following Hilt module
+
+ ```kotlin
+@Module
+@InstallIn(ActivityRetainedComponent::class)
+public object ProvidesSomething_ActivityRetainedComponent_AutoFactoryModule {
+    @Provides
+    @Singleton
+    public fun provideProvidesSomething(): Something = ProvidesSomethingFactory();
+ ```
+
+### Multibindings
+
+By default, the annotation processor generates a module that provides a single instance of annotated
+function return type.
+For dagger multibindings, you can bind a value to a set or a map of supertypes using
+the `AutoFactoryTarget` parameter.
+
+#### Set or map multibindings
+
+ ```kotlin
+interface Something
+
+@Singleton
+@AutoFactory(target = AutoFactoryTarget.SET) // or AutoFactoryTarget.MAP
+fun SomethingFactory(): Something = object : Something {}
+  ```
+
+The annotation processor will generate a following Hilt module
+
+ ```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+public object Something_SingletonComponent_AutoFactoryModule {
+    @Provides
+    @Singleton
+    @IntoSet
+    public fun provideSomething(): Something = SomethingFactory();
+}
+ ```
+
+#### Elements into set
+
+For providing a set of values, that should be bound to a set of a super type, use `AutoFactoryTarget.SET_VALUES`
+
+ ```kotlin
+interface Something
+
+@Singleton
+@AutoFactory(target = AutoFactoryTarget.SET_VALUES)
+fun SomethingFactory(): Set<Something> = setOf(object : Something {})
+ ```
+
+The annotation processor will generate a following Hilt module
+
+ ```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+public object Something_SingletonComponent_AutoFactoryModule {
+    @Provides
+    @Singleton
+    @ElementsIntoSet
+    public fun provideSomething(): Set<Something> = SomethingFactory();
+}
+ ```
+
+#### Multibindings set provider
+
+With dagger multibindings, you do not have to explicitly provide a set/map container if the bound set/map is
+going to have at least one element. If the resulting set could be empty set container needs to be provided.
+Equivalent to `dagger.multibindings.Multibinds` you can provide a container for a set
+of values using `AutoFactoryTarget.MULTIBINDING_CONTAINER`
+
+ ```kotlin
+interface Something
+
+@Singleton
+@AutoFactory(target = AutoFactoryTarget.MULTIBINDING_CONTAINER)
+fun SomethingFactory(): Set<Something> = setOf()
+ ```
+
+The annotation processor will generate a following Hilt module
+
+ ```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+public object Something_SingletonComponent_AutoFactoryModule {
+    @Provides
+    @Singleton
+    @Multibinds
+    public fun provideSomething(): Set<Something> = SomethingFactory();
+}
+ ```
 
 ### Visibility
 
-The generated module will have the same visibility as the annotated function.
+The generated module will have the same visibility as the annotated class.
 
-# Multibinding
-
-Both `AutoBind` and `AutoFactory` support multibinding. To provide an element into a set or a map use one of
-`AutoBindToMap`, `AutoBindToSet`, `AutoBindValuesToSet` or for the `dagger.Multibinds` use `AutoBindMultiBinds`.
-
-Note: Using these annotations is required for multibinding, otherwise Dagger will pick up annotated types which
-will result in a processing error. Other dagger mutlbind annotations should be used direcly ex. `ClassKey`, `MapKey` etc.
-
-For example:
-
-```kotlin
-interface Foo
-
-@AutoBindToSet
-class FooImpl @Inject constructor() : Foo
-```
-or with a factory
-
-```kotlin
-interface Foo
-
-class SpecificFoo : Foo
+ ```kotlin
+interface Something
 
 @AutoFactory
-@AutoBindToSet
-fun Foo(): Foo {
-    return SpecificFoo()
+internal class SomethingImpl : Something
+ ```
+
+The annotation processor will generate a following Hilt module
+
+ ```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+internal object SomethingImpl_SingletonComponent_AutoFactoryModule {
+    @Provides
+    @Singleton
+    fun provideSomethingImpl(): Something = SomethingImpl();
 }
-```
+ ```
 
 # Testing
 
