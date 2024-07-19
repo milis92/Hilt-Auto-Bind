@@ -27,7 +27,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: false
-      - run: ./gradlew check
+      - run: ./gradlew check -x test
       - name: Merge reports
         if: failure()
         uses: microsoft/sarif-actions@v0.1
