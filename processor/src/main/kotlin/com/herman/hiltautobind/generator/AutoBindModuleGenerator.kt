@@ -3,9 +3,7 @@ package com.herman.hiltautobind.generator
 import com.herman.hiltautobind.model.AutoBindSchema
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.toClassName
-import dagger.Binds
 
 class AutoBindModuleGenerator : HiltAutoBindModuleGenerator<AutoBindSchema>() {
     override fun buildHiltProvideFunction(schema: AutoBindSchema): FunSpec = with(schema) {
