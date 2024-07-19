@@ -6,13 +6,11 @@ import com.herman.hiltautobind.model.AutoFactorySchema
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toKModifier
-import dagger.Provides
 
 class AutoFactoryModuleGenerator : HiltAutoBindModuleGenerator<AutoFactorySchema>() {
     override fun buildHiltProvideFunction(schema: AutoFactorySchema): FunSpec = with(schema) {
         FunSpec.builder(name = hiltFunctionName)
-            .addAnnotation(daggerProvidesClassName)
-            .addAnnotations(otherAnnotations)
+            .addAnnotations(hiltFunctionAnnotations)
             .addFactoryParameterIfClass(this)
             .addParameters(annotatedFunctionParameters)
             .returns(annotatedFunctionReturnType)
@@ -55,20 +53,23 @@ class AutoFactoryModuleGenerator : HiltAutoBindModuleGenerator<AutoFactorySchema
     }
 
     private val AutoFactorySchema.enclosingElementKind
-        get() = (enclosingElement as? KSClassDeclaration)
+        get() = (annotatedFunction.parentDeclaration as? KSClassDeclaration)
 
     private val AutoFactorySchema.enclosingClassName
         get() = enclosingElementKind?.toClassName()
 
     private val ClassKind.isClass
-        get() = this in listOf(ClassKind.INTERFACE, ClassKind.CLASS, ClassKind.ENUM_CLASS, ClassKind.ENUM_ENTRY)
+        get() = this in listOf(
+            ClassKind.INTERFACE,
+            ClassKind.CLASS,
+            ClassKind.ENUM_CLASS,
+            ClassKind.ENUM_ENTRY
+        )
 
     companion object {
         private const val FACTORY_PARAMETER_NAME = "factory"
         private const val PROVIDES_RETURN_FORMAT_INSTANCE = "return factory.%N(%L);"
         private const val PROVIDES_RETURN_FORMAT_OBJECT = "return %T.%N(%L);"
         private const val PROVIDES_RETURN_FORMAT_FILE = "return %N(%L);"
-
-        private val daggerProvidesClassName = Provides::class.asClassName()
     }
 }

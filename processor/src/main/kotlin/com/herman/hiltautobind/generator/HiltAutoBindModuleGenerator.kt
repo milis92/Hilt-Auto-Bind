@@ -1,33 +1,45 @@
 package com.herman.hiltautobind.generator
 
 import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.symbol.Visibility
 import com.herman.hiltautobind.model.HiltAutoBindSchema
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.writeTo
 import dagger.hilt.InstallIn
 
 abstract class HiltAutoBindModuleGenerator<T : HiltAutoBindSchema> {
-    fun generate(codeGenerator: CodeGenerator, schema: T) {
-        FileSpec.builder(className = schema.hiltModuleName)
-            .addType(buildHiltModule(schema))
-            .build()
-            .writeTo(
-                codeGenerator = codeGenerator,
-                aggregating = true,
-                originatingKSFiles = listOf(schema.containingFile)
-            )
-    }
+    fun generate(
+        codeGenerator: CodeGenerator,
+        className: ClassName,
+        schemas: List<T>
+    ) = FileSpec.builder(className = className)
+        .addType(buildHiltModuleClass(className, schemas))
+        .build()
+        .writeTo(
+            codeGenerator = codeGenerator,
+            aggregating = true,
+            originatingKSFiles = schemas.map {
+                it.containingFile
+            }
+        )
 
-    private fun buildHiltModule(schema: T): TypeSpec = when (schema.hiltModuleType) {
+    private fun buildHiltModuleClass(
+        className: ClassName,
+        schemas: List<T>
+    ): TypeSpec = when (schemas.first().hiltModuleType) {
         HiltAutoBindSchema.HiltModuleType.OBJECT ->
-            TypeSpec.objectBuilder(className = schema.hiltModuleName)
+            TypeSpec.objectBuilder(className = className)
+
         HiltAutoBindSchema.HiltModuleType.INTERFACE ->
-            TypeSpec.interfaceBuilder(className = schema.hiltModuleName)
+            TypeSpec.interfaceBuilder(className = className)
     }.addAnnotation(daggerModuleClassName)
-        .addAnnotation(getInstallInAnnotationSpec(schema))
-        .addFunction(buildHiltProvideFunction(schema))
-        .addModifiers(schema.hiltModuleVisibility.toKModifier() ?: KModifier.PUBLIC)
+        .addAnnotation(getInstallInAnnotationSpec(schemas.first()))
+        .addModifiers(
+            schemas.any { it.hiltModuleVisibility == Visibility.INTERNAL }.let {
+                if (it) KModifier.INTERNAL else KModifier.PUBLIC
+            }
+        )
+        .addFunctions(schemas.map { buildHiltProvideFunction(it) })
         .build()
 
     private fun getInstallInAnnotationSpec(schema: T): AnnotationSpec =

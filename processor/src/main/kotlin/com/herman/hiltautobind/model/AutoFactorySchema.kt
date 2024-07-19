@@ -2,59 +2,58 @@ package com.herman.hiltautobind.model
 
 import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.symbol.*
-import com.herman.hiltautobind.AutoFactory
-import com.herman.hiltautobind.TestAutoFactory
-import com.herman.hiltautobind.TypesCollection
-import com.herman.hiltautobind.kotlinpoet.toParameterSpec
-import com.herman.hiltautobind.kotlinpoet.toUnwrappedAnnotationSpec
+import com.herman.hiltautobind.annotations.autofactory.*
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
+import java.util.*
 
 @Suppress("LongParameterList")
 class AutoFactorySchema(
     override val containingFile: KSFile,
-    val annotatedFunctionName: String,
-    val annotatedFunctionParameters: List<ParameterSpec>,
-    val annotatedFunctionReturnType: TypeName,
-    val enclosingElement: KSDeclaration?,
-    override val autoBindAnnotation: KSAnnotation,
-    override val otherAnnotations: List<AnnotationSpec>,
-    override val hiltModuleVisibility: Visibility,
+    override val originalDeclaration: KSDeclaration,
 ) : HiltAutoBindSchema {
 
     constructor(functionDeclaration: KSFunctionDeclaration) : this(
         containingFile = requireNotNull(functionDeclaration.containingFile) {
             "'${functionDeclaration.qualifiedName}' function declaration is not contained in file"
         },
-        annotatedFunctionName = functionDeclaration.simpleName.asString(),
-        annotatedFunctionParameters = functionDeclaration.parameters.map(KSValueParameter::toParameterSpec),
-        annotatedFunctionReturnType = requireNotNull(functionDeclaration.returnType?.toTypeName()),
-        enclosingElement = functionDeclaration.parentDeclaration,
-        autoBindAnnotation = functionDeclaration.annotations.first { annotation ->
-            annotation in autoFactoryAnnotations
-        },
-        otherAnnotations = functionDeclaration.annotations.filterNot { annotation ->
-            annotation in autoFactoryAnnotations
-        }.map(KSAnnotation::toUnwrappedAnnotationSpec).toList(),
-        hiltModuleVisibility = functionDeclaration.getVisibility()
+        originalDeclaration = functionDeclaration,
     )
 
+    val annotatedFunction: KSFunctionDeclaration = originalDeclaration as KSFunctionDeclaration
+
+    val annotatedFunctionParameters = annotatedFunction.parameters.map(
+        KSValueParameter::toParameterSpec
+    )
+
+    val annotatedFunctionName = annotatedFunction.simpleName.asString()
+
+    val annotatedFunctionReturnType = requireNotNull(annotatedFunction.returnType?.toTypeName())
+
+    private val autoFactoryAnnotation: KSAnnotation = annotatedFunction.annotations.first { annotations ->
+        annotations.annotationType.toTypeName() in listOf(AUTO_FACTORY_ANNOTATION, TEST_AUTO_FACTORY_ANNOTATION)
+    }
+
     override val hiltComponent: ClassName
-        get() = autoBindAnnotation.getArgument(autoBindAnnotation.getHiltComponentArgumentName)?.let {
-            (it as? KSType)?.toClassName()
-        } ?: dagger.hilt.components.SingletonComponent::class.asClassName()
+        get() = autoFactoryAnnotation.getArgumentClassName(
+            autoFactoryAnnotation.getHiltComponentArgumentName
+        ) ?: HILT_SINGLETON_COMPONENT
+
+    override val hiltModuleVisibility: Visibility = annotatedFunction.getVisibility()
 
     override val hiltModuleType: HiltAutoBindSchema.HiltModuleType =
         HiltAutoBindSchema.HiltModuleType.OBJECT
 
+    private val hiltModuleClassSimpleName
+        get() = annotatedFunction.returnType?.resolve()?.toClassName()
+
     override val hiltModuleName: ClassName = ClassName(
         packageName = containingFile.packageName.asString(),
         simpleNames = listOf(
-            (if (isTestModule) HILT_TEST_MODULE_NAME_FORMAT else HILT_MODULE_NAME_FORMAT).format(
-                annotatedFunctionName,
-                hiltComponent.simpleName
-            )
+            (if (isTestModule) HILT_TEST_MODULE_NAME_FORMAT else HILT_MODULE_NAME_FORMAT)
+                .format(hiltModuleClassSimpleName, hiltComponent.simpleName)
         )
     )
 
@@ -62,15 +61,36 @@ class AutoFactorySchema(
         get() = ClassName(
             packageName = containingFile.packageName.asString(),
             simpleNames = listOf(
-                HILT_MODULE_NAME_FORMAT.format(
-                    annotatedFunctionName,
-                    hiltComponent.simpleName
-                )
+                HILT_MODULE_NAME_FORMAT.format(hiltModuleClassSimpleName, hiltComponent.simpleName)
             )
         )
 
+    override val hiltFunctionAnnotations: List<AnnotationSpec>
+        get() = listOfNotNull(
+            HILT_PROVIDES_ANNOTATION, hiltMultibindingAnnotation
+        ) + annotatedFunction.annotations.filterNot { annotations ->
+            annotations.annotationType.toTypeName() in listOf(AUTO_FACTORY_ANNOTATION, TEST_AUTO_FACTORY_ANNOTATION)
+        }.map { it.toAnnotationSpec(true) }.toList()
+
+    override val hiltFunctionName: String
+        get() = PROVIDES_METHOD_NAME_PREFIX + annotatedFunctionName
+
+    private val hiltMultibindingAnnotation: AnnotationSpec?
+        get() = when (
+            autoFactoryAnnotation.getArgumentClassName(
+                autoFactoryAnnotation.getAutoBindTargetArgumentName
+            )?.simpleName
+        ) {
+            AutoFactoryTarget.INSTANCE.name -> null
+            AutoFactoryTarget.SET.name -> HILT_INTO_SET_ANNOTATION
+            AutoFactoryTarget.MAP.name -> HILT_INTO_MAP_ANNOTATION
+            AutoFactoryTarget.SET_VALUES.name -> HILT_ELEMENTS_INTO_SET_ANNOTATION
+            AutoFactoryTarget.MULTIBINDING_CONTAINER.name -> HILT_MULTIBINDS_ANNOTATION
+            else -> null
+        }
+
     override val isTestModule: Boolean
-        get() = autoBindAnnotation.annotationType.toTypeName() == TestAutoFactory::class.asTypeName()
+        get() = autoFactoryAnnotation.annotationType.toTypeName() == TEST_AUTO_FACTORY_ANNOTATION
 
     private val KSAnnotation.getHiltComponentArgumentName: String
         get() = when (annotationType.toTypeName()) {
@@ -79,18 +99,23 @@ class AutoFactorySchema(
             else -> error("Annotation $annotationType has no component argument")
         }
 
-    override val hiltFunctionName: String
-        get() = PROVIDES_METHOD_NAME_PREFIX + annotatedFunctionName
+    private val KSAnnotation.getAutoBindTargetArgumentName: String
+        get() = when (annotationType.toTypeName()) {
+            AutoFactory::class.asTypeName() -> AutoFactory::target.name
+            TestAutoFactory::class.asTypeName() -> TestAutoFactory::target.name
+            else -> error("Annotation $annotationType has no target argument")
+        }
 
     val formattedCallParameters = annotatedFunctionParameters.joinToString { it.name }
 
     companion object {
         private const val PROVIDES_METHOD_NAME_PREFIX = "provide"
+        val AUTO_FACTORY_ANNOTATION = AutoFactory::class.asTypeName()
+        val TEST_AUTO_FACTORY_ANNOTATION = TestAutoFactory::class.asTypeName()
 
         private const val HILT_MODULE_NAME_FORMAT =
             "%s${HILT_MODULE_NAME_SEPARATOR}%s${HILT_MODULE_NAME_SEPARATOR}AutoFactoryModule"
         private const val HILT_TEST_MODULE_NAME_FORMAT =
             "%s${HILT_MODULE_NAME_SEPARATOR}%s${HILT_MODULE_NAME_SEPARATOR}TestAutoFactoryModule"
-        val autoFactoryAnnotations = TypesCollection.of(AutoFactory::class, TestAutoFactory::class)
     }
 }
