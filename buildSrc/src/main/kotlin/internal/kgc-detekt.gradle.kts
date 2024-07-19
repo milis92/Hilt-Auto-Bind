@@ -1,11 +1,14 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_SRC_DIR_KOTLIN
 import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("io.gitlab.arturbosch.detekt")
 }
 
-tasks.withType<Detekt> {
+extensions.configure<DetektExtension> {
+    // Run detekt in parallel
     parallel = true
     // Define the detekt configuration you want to use.
     config.setFrom(files(rootDir.resolve("config/detekt/detekt.yml")))
@@ -17,6 +20,11 @@ tasks.withType<Detekt> {
     autoCorrect = true
     // Configure base path so detekt can properly format reports
     basePath = rootDir.absolutePath
+    // Run detekt on the main source set
+    source.setFrom(files(DEFAULT_SRC_DIR_KOTLIN))
+}
+
+tasks.withType<Detekt> {
     // Outputs dir
     reportsDir.set(file(rootDir.resolve("build/reports/detekt/${project.name}")))
     reports {
