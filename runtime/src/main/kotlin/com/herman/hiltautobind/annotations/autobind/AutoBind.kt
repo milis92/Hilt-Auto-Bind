@@ -127,7 +127,8 @@ enum class AutoBindTarget {
  *
  * ## Multibindings
  * By default the annotation processor binds a value as an instance of the specified supertype.
- * For dagger multibindings, you can bind a value to a set or a map of supertypes using the [`target`][AutoBindTarget] parameter.
+ * For dagger multibindings, you can bind a value to a set or a map of supertypes using the
+ * [`target`][AutoBindTarget] parameter.
  *
  * ```kotlin
  * interface Something

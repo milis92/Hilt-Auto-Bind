@@ -3,9 +3,7 @@ package com.herman.hiltautobind.visitors
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.herman.hiltautobind.model.AutoBindSchema
 import com.herman.hiltautobind.model.AutoFactorySchema
-import com.herman.hiltautobind.model.HiltAutoBindSchema
 import com.squareup.kotlinpoet.ClassName
 
 class AutoFactoryVisitor(

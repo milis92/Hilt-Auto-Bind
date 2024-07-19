@@ -63,7 +63,7 @@ fun KSClassDeclaration.getFirstNonAnySuperType(): ClassName? = superTypes.map {
 fun KSValueParameter.toParameterSpec(): ParameterSpec {
     return ParameterSpec.builder(
         name = name?.asString().orEmpty(),
-        type =  type.toTypeName(),
+        type = type.toTypeName(),
     ).addAnnotations(
         annotations.map { it.toAnnotationSpec(true) }.toList()
     ).build()

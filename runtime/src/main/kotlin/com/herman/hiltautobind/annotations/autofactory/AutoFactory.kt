@@ -1,6 +1,5 @@
 package com.herman.hiltautobind.annotations.autofactory
 
-import com.herman.hiltautobind.annotations.autobind.AutoBind
 import dagger.hilt.components.SingletonComponent
 import kotlin.reflect.KClass
 
