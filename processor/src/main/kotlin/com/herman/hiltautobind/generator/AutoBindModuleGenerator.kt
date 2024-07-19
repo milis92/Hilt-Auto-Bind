@@ -10,8 +10,7 @@ import dagger.Binds
 class AutoBindModuleGenerator : HiltAutoBindModuleGenerator<AutoBindSchema>() {
     override fun buildHiltProvideFunction(schema: AutoBindSchema): FunSpec = with(schema) {
         FunSpec.builder(name = hiltFunctionName)
-            .addAnnotation(daggerBindsClassName)
-            .addAnnotations(otherAnnotations)
+            .addAnnotations(hiltFunctionAnnotations)
             .addParameter(name = PARAM_IMPLEMENTATION, type = annotatedClass.toClassName())
             .addModifiers(KModifier.ABSTRACT)
             .returns(boundSuperType)
@@ -19,7 +18,6 @@ class AutoBindModuleGenerator : HiltAutoBindModuleGenerator<AutoBindSchema>() {
     }
 
     companion object {
-        private val daggerBindsClassName = Binds::class.asClassName()
         private const val PARAM_IMPLEMENTATION = "implementation"
     }
 }

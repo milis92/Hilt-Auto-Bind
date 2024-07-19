@@ -26,15 +26,15 @@ internal class HiltAutoBindSymbolProcessor(
 
     private fun processBindings(resolver: Resolver) {
         val generator = AutoBindModuleGenerator()
-        AutoBindVisitor(logger).collect(resolver).forEach {
-            generator.generate(codeGenerator, it)
+        AutoBindVisitor(logger).collect(resolver).entries.forEach { (moduleName, schemas) ->
+            generator.generate(codeGenerator, moduleName, schemas)
         }
     }
 
     private fun processFactoryMethods(resolver: Resolver) {
         val generator = AutoFactoryModuleGenerator()
-        AutoFactoryVisitor(logger).collect(resolver).forEach {
-            generator.generate(codeGenerator, it)
+        AutoFactoryVisitor(logger).collect(resolver).entries.forEach { (moduleName, schemas) ->
+            generator.generate(codeGenerator, moduleName, schemas)
         }
     }
 }

@@ -2,81 +2,88 @@ package com.herman.hiltautobind.model
 
 import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.symbol.*
-import com.herman.hiltautobind.AutoBind
-import com.herman.hiltautobind.TestAutoBind
-import com.herman.hiltautobind.TypesCollection
-import com.herman.hiltautobind.kotlinpoet.toUnwrappedAnnotationSpec
+import com.herman.hiltautobind.annotations.autobind.*
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 
 class AutoBindSchema private constructor(
     override val containingFile: KSFile,
-    val annotatedClass: KSClassDeclaration,
-    override val autoBindAnnotation: KSAnnotation,
-    override val otherAnnotations: List<AnnotationSpec>,
-    override val hiltModuleVisibility: Visibility,
+    override val originalDeclaration: KSDeclaration,
 ) : HiltAutoBindSchema {
 
     constructor(classDeclaration: KSClassDeclaration) : this(
         containingFile = requireNotNull(classDeclaration.containingFile) {
             "'${classDeclaration.qualifiedName}' class declaration is not contained in file"
         },
-        annotatedClass = classDeclaration,
-        autoBindAnnotation = classDeclaration.annotations.first { annotations ->
-            annotations in bindAnnotations
-        },
-        otherAnnotations = classDeclaration.annotations.filterNot { annotations ->
-            annotations in bindAnnotations
-        }.map(KSAnnotation::toUnwrappedAnnotationSpec).toList(),
-        hiltModuleVisibility = classDeclaration.getVisibility()
+        originalDeclaration = classDeclaration,
     )
+
+    val annotatedClass: KSClassDeclaration = originalDeclaration as KSClassDeclaration
 
     // Read the superType from the annotation if the superType is not the default superType,
     // otherwise use the first superType of the annotated class
     val boundSuperType: ClassName
-        get() = autoBindAnnotation.getArgument(autoBindAnnotation.getBoundSuperTypeArgumentName)?.let {
-            (it as? KSType)?.toClassName()
-        }.takeIf {
-            it != (
-                autoBindAnnotation.getDefaultArgument(
-                    autoBindAnnotation.getBoundSuperTypeArgumentName
-                ) as KSType
-                ).toClassName()
-        } ?: annotatedClass.superTypes.map { it.resolve().toClassName() }.firstOrNull { it != ANY }
-            ?: annotatedClass.toClassName()
+        get() = autoBindAnnotation.getArgumentClassNameIfNotDefault(
+            autoBindAnnotation.getBoundSuperTypeArgumentName
+        ) ?: annotatedClass.getFirstNonAnySuperType() ?: annotatedClass.toClassName()
+
+    private val autoBindAnnotation: KSAnnotation = annotatedClass.annotations.first { annotations ->
+        annotations.annotationType.toTypeName() in listOf(BIND_ANNOTATION, TEST_BIND_ANNOTATION)
+    }
 
     override val hiltComponent: ClassName
-        get() = autoBindAnnotation.getArgument(autoBindAnnotation.getHiltComponentArgumentName)?.let {
-            (it as? KSType)?.toClassName()
-        } ?: dagger.hilt.components.SingletonComponent::class.asClassName()
+        get() = autoBindAnnotation.getArgumentClassName(
+            autoBindAnnotation.getHiltComponentArgumentName
+        ) ?: HILT_SINGLETON_COMPONENT
+
+    override val hiltModuleVisibility: Visibility = annotatedClass.getVisibility()
 
     override val hiltModuleType: HiltAutoBindSchema.HiltModuleType =
         HiltAutoBindSchema.HiltModuleType.INTERFACE
 
-    override val hiltModuleName: ClassName = ClassName(
-        packageName = containingFile.packageName.asString(),
-        simpleNames = listOf(
-            (if (isTestModule) HILT_TEST_MODULE_NAME_FORMAT else HILT_MODULE_NAME_FORMAT).format(
-                boundSuperType.simpleName,
-                hiltComponent.simpleName
-            )
-        )
-    )
+    private val hiltModuleClassSimpleName
+        get() = (boundSuperType.simpleNames).joinToString("")
 
-    override val hiltReplacesModuleName: ClassName
+    override val hiltModuleName: ClassName
         get() = ClassName(
             packageName = containingFile.packageName.asString(),
             simpleNames = listOf(
-                HILT_MODULE_NAME_FORMAT.format(boundSuperType.simpleName, hiltComponent.simpleName)
+                (if (isTestModule) HILT_TEST_MODULE_NAME_FORMAT else HILT_MODULE_NAME_FORMAT)
+                    .format(hiltModuleClassSimpleName, hiltComponent.simpleName)
             )
         )
 
-    override val isTestModule: Boolean
-        get() = autoBindAnnotation.annotationType.toTypeName() == TestAutoBind::class.asTypeName()
+    override val hiltReplacesModuleName: ClassName = ClassName(
+        packageName = containingFile.packageName.asString(),
+        simpleNames = listOf(
+            HILT_MODULE_NAME_FORMAT.format(hiltModuleClassSimpleName, hiltComponent.simpleName)
+        )
+    )
 
-    override val hiltFunctionName: String
-        get() = "$BIND_METHOD_NAME_PREFIX${boundSuperType.simpleName}"
+    override val hiltFunctionAnnotations: List<AnnotationSpec>
+        get() = listOfNotNull(
+            HILT_BINDS_ANNOTATION, hiltMultibindingAnnotation
+        ) + annotatedClass.annotations.filterNot { annotations ->
+            annotations.annotationType.toTypeName() in listOf(BIND_ANNOTATION, TEST_BIND_ANNOTATION)
+        }.map { it.toAnnotationSpec(true) }.toList()
+
+    override val hiltFunctionName: String = "$BIND_METHOD_NAME_PREFIX${annotatedClass.simpleName.asString()}"
+
+    private val hiltMultibindingAnnotation: AnnotationSpec?
+        get() = when (
+            autoBindAnnotation.getArgumentClassName(
+                autoBindAnnotation.getAutoBindTargetArgumentName
+            )?.simpleName
+        ) {
+            AutoBindTarget.INSTANCE.name -> null
+            AutoBindTarget.SET.name -> HILT_INTO_SET_ANNOTATION
+            AutoBindTarget.MAP.name -> HILT_INTO_MAP_ANNOTATION
+            else -> null
+        }
+
+    override val isTestModule: Boolean = autoBindAnnotation.annotationType.toTypeName() == TEST_BIND_ANNOTATION
 
     private val KSAnnotation.getBoundSuperTypeArgumentName: String
         get() = when (annotationType.toTypeName()) {
@@ -92,9 +99,18 @@ class AutoBindSchema private constructor(
             else -> error("Annotation $annotationType has no component argument")
         }
 
+    private val KSAnnotation.getAutoBindTargetArgumentName: String
+        get() = when (annotationType.toTypeName()) {
+            AutoBind::class.asTypeName() -> AutoBind::target.name
+            TestAutoBind::class.asTypeName() -> TestAutoBind::target.name
+            else -> error("Annotation $annotationType has no target argument")
+        }
+
     companion object {
         private const val BIND_METHOD_NAME_PREFIX = "bind"
-        val bindAnnotations = TypesCollection.of(AutoBind::class, TestAutoBind::class)
+
+        val BIND_ANNOTATION = AutoBind::class.asTypeName()
+        val TEST_BIND_ANNOTATION = TestAutoBind::class.asTypeName()
 
         private const val HILT_MODULE_NAME_FORMAT =
             "%s${HILT_MODULE_NAME_SEPARATOR}%s${HILT_MODULE_NAME_SEPARATOR}Module"
