@@ -390,4 +390,56 @@ class HiltAutoFactoryTest {
             )
         )
     }
+
+    @Test
+    fun autoFactoryExcludesPackageNameInTheGeneratedModuleName(){
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            package com.herman.hiltautobind.test
+            
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactory
+            
+            interface Something
+                        
+            @AutoFactory  
+            fun SomethingFactory(): Something = object : Something {}
+                
+            @AutoFactory
+            fun SomethingElseFactory(): Something = object : Something {}
+            """.trimIndent()
+        )
+
+        val expectedContent = ExpectedContent(
+            """
+            package com.herman.hiltautobind.test
+
+            import dagger.Module
+            import dagger.Provides
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public object Something_SingletonComponent_AutoFactoryModule {
+              @Provides
+              public fun provideSomethingFactory(): Something = SomethingFactory();
+            
+              @Provides
+              public fun provideSomethingElseFactory(): Something = SomethingElseFactory();
+            }
+            """.trimIndent()
+        )
+
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(
+                FileName(
+                    "kotlin/com/herman/hiltautobind/test/Something_SingletonComponent_AutoFactoryModule.kt"
+                ) to expectedContent
+            )
+        )
+    }
 }
