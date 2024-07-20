@@ -91,7 +91,9 @@ class KotlinCompilationTestExtension(
         expectedContent.forEach {
             val file = compiler.kspSourcesDir.resolve(it.key.name)
             if (!file.exists()) {
-                fail("File $file doest not exist available files: ${listGeneratedKotlinFilePaths()}")
+                error(
+                    "File $file doest not exist available files: ${listGeneratedKotlinFilePaths()}"
+                )
             } else {
                 assertEquals(it.value.content, file.readText().trim())
             }

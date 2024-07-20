@@ -279,6 +279,48 @@ class HiltAutoFactoryTest {
                 FileName("kotlin/Something_SingletonComponent_AutoFactoryModule.kt") to provideSomething,
             )
         )
+
+    }
+
+    @Test
+    fun autoFactoryMultibindsReplacesProvide(){
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactory
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactoryTarget
+            
+            interface Something
+            
+            @AutoFactory(target = AutoFactoryTarget.MULTIBINDING_CONTAINER)    
+            fun SomethingFactory(): Set<Something> = emptySet<Something>()
+            """.trimIndent()
+        )
+
+        val provideSomething = ExpectedContent(
+            """
+            import dagger.Module
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import dagger.multibindings.Multibinds
+            import kotlin.collections.Set
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public object Set_SingletonComponent_AutoFactoryModule {
+              @Multibinds
+              public fun provideSomethingFactory(): Set<Something> = SomethingFactory();
+            }
+            """.trimIndent()
+        )
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(
+                FileName("kotlin/Set_SingletonComponent_AutoFactoryModule.kt") to provideSomething,
+            )
+        )
     }
 
     @Test
