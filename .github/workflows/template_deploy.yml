@@ -47,7 +47,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: false
-      - run: ./gradlew -Preckon.stage=${{ inputs.STAGE }} versionToFile publish --no-daemon --no-configuration-cache
+      - run: |
+          if [ "${{ github.ref_type }}" != "tag" ]; then
+            ./gradlew -Preckon.stage=${{ inputs.STAGE }} versionToFile publish --no-daemon --no-configuration-cache
+          else
+            ./gradlew versionToFile publish --no-daemon --no-configuration-cache
+          fi
         env:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
