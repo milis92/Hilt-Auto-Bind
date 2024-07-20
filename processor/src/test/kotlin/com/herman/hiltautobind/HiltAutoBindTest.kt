@@ -472,4 +472,50 @@ class HiltAutoBindTest {
             )
         )
     }
+
+    @Test
+    fun autoBindExcludesPackageNameInTheGeneratedModuleName (){
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            package com.herman.hiltautobind.test
+            
+            import com.herman.hiltautobind.annotations.autobind.AutoBind
+            
+            interface Something
+            
+            @AutoBind
+            class SomethingImpl : Something
+            """.trimIndent()
+        )
+
+        val expectedContent = ExpectedContent(
+            """
+            package com.herman.hiltautobind.test
+            
+            import dagger.Binds
+            import dagger.Module
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public interface Something_SingletonComponent_Module {
+              @Binds
+              public fun bindSomethingImpl(implementation: SomethingImpl): Something
+            }
+            """.trimIndent()
+        )
+
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(
+                FileName(
+                    "kotlin/com/herman/hiltautobind/test/Something_SingletonComponent_Module.kt"
+                ) to expectedContent
+            )
+        )
+    }
 }

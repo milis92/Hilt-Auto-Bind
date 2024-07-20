@@ -47,7 +47,7 @@ class AutoFactorySchema(
         HiltAutoBindSchema.HiltModuleType.OBJECT
 
     private val hiltModuleClassSimpleName
-        get() = annotatedFunction.returnType?.resolve()?.toClassName()
+        get() = annotatedFunction.returnType?.resolve()?.toClassName()?.simpleNames?.joinToString("")
 
     override val hiltModuleName: ClassName = ClassName(
         packageName = containingFile.packageName.asString(),
