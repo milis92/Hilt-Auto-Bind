@@ -67,7 +67,8 @@ class AutoFactorySchema(
 
     override val hiltFunctionAnnotations: List<AnnotationSpec>
         get() = listOfNotNull(
-            HILT_PROVIDES_ANNOTATION, hiltMultibindingAnnotation
+            HILT_PROVIDES_ANNOTATION.takeIf { hiltMultibindingAnnotation != HILT_MULTIBINDS_ANNOTATION },
+            hiltMultibindingAnnotation
         ) + annotatedFunction.annotations.filterNot { annotations ->
             annotations.annotationType.toTypeName() in listOf(AUTO_FACTORY_ANNOTATION, TEST_AUTO_FACTORY_ANNOTATION)
         }.map { it.toAnnotationSpec(true) }.toList()
