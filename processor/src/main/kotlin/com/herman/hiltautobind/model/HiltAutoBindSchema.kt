@@ -2,6 +2,7 @@ package com.herman.hiltautobind.model
 
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.jvm.jvmSuppressWildcards
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
@@ -61,9 +62,16 @@ fun KSClassDeclaration.getFirstNonAnySuperType(): ClassName? = superTypes.map {
 }.firstOrNull { it != ANY }
 
 fun KSValueParameter.toParameterSpec(): ParameterSpec {
+    val typeName = type.toTypeName()
     return ParameterSpec.builder(
         name = name?.asString().orEmpty(),
-        type = type.toTypeName(),
+        type = if (typeName is ParameterizedTypeName) {
+            typeName.copy(
+                typeArguments = typeName.typeArguments.map { it.jvmSuppressWildcards() }
+            )
+        } else {
+            typeName
+        },
     ).addAnnotations(
         annotations.map { it.toAnnotationSpec(true) }.toList()
     ).build()

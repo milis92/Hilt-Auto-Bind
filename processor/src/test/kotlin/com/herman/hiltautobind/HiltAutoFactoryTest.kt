@@ -27,12 +27,15 @@ class HiltAutoFactoryTest {
             
             interface Something
             
+            interface SomethingElse
+            
             @Singleton
             @AutoFactory
             @SomeAnnotation("someAnnotationString", "someAnnotationStringWithDefault")
-            fun SomethingFactory(): Something = object : Something {}
+            fun SomethingFactory(somethingElse : Set<@JvmSuppressWildcards SomethingElse>): Something = object : Something {}
             """.trimIndent()
         )
+
 
         val provideSomething = ExpectedContent(
             """
@@ -41,6 +44,8 @@ class HiltAutoFactoryTest {
             import dagger.hilt.InstallIn
             import dagger.hilt.components.SingletonComponent
             import javax.inject.Singleton
+            import kotlin.collections.Set
+            import kotlin.jvm.JvmSuppressWildcards
             
             @Module
             @InstallIn(SingletonComponent::class)
@@ -51,7 +56,8 @@ class HiltAutoFactoryTest {
                 someAnnotationString = "someAnnotationString",
                 someAnnotationStringWithDefault = "someAnnotationStringWithDefault",
               )
-              public fun provideSomethingFactory(): Something = SomethingFactory();
+              public fun provideSomethingFactory(somethingElse: Set<@JvmSuppressWildcards SomethingElse>):
+                  Something = SomethingFactory(somethingElse);
             }
             """.trimIndent()
         )
