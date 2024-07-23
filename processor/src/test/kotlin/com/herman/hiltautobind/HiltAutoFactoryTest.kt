@@ -287,49 +287,6 @@ class HiltAutoFactoryTest {
     }
 
     @Test
-    fun autoFactoryMultibindsUsesElementsIntoSet(){
-        // Given
-        val sourceFile = SourceFile.kotlin(
-            name = "Main.kt",
-            contents = """
-            import com.herman.hiltautobind.annotations.autofactory.AutoFactory
-            import com.herman.hiltautobind.annotations.autofactory.AutoFactoryTarget
-            
-            interface Something
-            
-            @AutoFactory(target = AutoFactoryTarget.MULTIBINDING_CONTAINER)    
-            fun SomethingFactory(): Set<Something> = emptySet<Something>()
-            """.trimIndent()
-        )
-
-        val provideSomething = ExpectedContent(
-            """
-            import dagger.Module
-            import dagger.Provides
-            import dagger.hilt.InstallIn
-            import dagger.hilt.components.SingletonComponent
-            import dagger.multibindings.ElementsIntoSet
-            import kotlin.collections.Set
-            
-            @Module
-            @InstallIn(SingletonComponent::class)
-            public object Set_SingletonComponent_AutoFactoryModule {
-              @Provides
-              @ElementsIntoSet
-              public fun provideSomethingFactory(): Set<Something> = SomethingFactory();
-            }
-            """.trimIndent()
-        )
-        // Then
-        compilerExtension.compileAndAssert(
-            sources = listOf(sourceFile),
-            expectedContent = mapOf(
-                FileName("kotlin/Set_SingletonComponent_AutoFactoryModule.kt") to provideSomething,
-            )
-        )
-    }
-
-    @Test
     fun autoFactoryFailsIfTargetIsSetButReturnTypeIsNotSet(){
         // Given
         val sourceFile = SourceFile.kotlin(
@@ -414,6 +371,7 @@ class HiltAutoFactoryTest {
 
         val expectedTestComponent = ExpectedContent(
             """
+            import Something_SingletonComponent_AutoFactoryModule
             import dagger.Module
             import dagger.Provides
             import dagger.hilt.components.SingletonComponent

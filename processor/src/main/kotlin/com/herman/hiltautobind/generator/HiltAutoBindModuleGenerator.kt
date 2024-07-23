@@ -14,6 +14,7 @@ abstract class HiltAutoBindModuleGenerator<T : HiltAutoBindSchema> {
         schemas: List<T>
     ) = FileSpec.builder(className = className)
         .addType(buildHiltModuleClass(className, schemas))
+        .addImportIfTest(schemas)
         .build()
         .writeTo(
             codeGenerator = codeGenerator,
@@ -41,6 +42,15 @@ abstract class HiltAutoBindModuleGenerator<T : HiltAutoBindSchema> {
         )
         .addFunctions(schemas.map { buildHiltProvideFunction(it) })
         .build()
+
+    private fun FileSpec.Builder.addImportIfTest(schemas: List<T>): FileSpec.Builder {
+        schemas.forEach { schema ->
+            if (schema.isTestModule) {
+                addImport(schema.hiltReplacesModuleName.packageName, schema.hiltReplacesModuleName.simpleNames)
+            }
+        }
+        return this
+    }
 
     private fun getInstallInAnnotationSpec(schema: T): AnnotationSpec =
         if (schema.isTestModule) {

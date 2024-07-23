@@ -358,7 +358,6 @@ class HiltAutoBindTest {
         )
     }
 
-    @Ignore("This fill fail due to missing TestInstallIn annotation that will be available in test sources")
     @Test
     fun testAutoBindReplacesAutoBindModule() {
         // Given
@@ -396,14 +395,16 @@ class HiltAutoBindTest {
 
         val expectedTestComponent = ExpectedContent(
             """
+            import Something_SingletonComponent_Module
             import dagger.Binds
             import dagger.Module
             import dagger.hilt.components.SingletonComponent
+            import dagger.hilt.testing.TestInstallIn
             
             @Module
             @TestInstallIn(
               components = [SingletonComponent::class],
-              replaces = [Something_SingletonComponent_Module::class]
+              replaces = [Something_SingletonComponent_Module::class],
             )
             public interface Something_SingletonComponent_TestModule {
               @Binds
