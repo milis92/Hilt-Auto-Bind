@@ -8,6 +8,11 @@ plugins {
 }
 
 extensions.configure<DetektExtension> {
+    // Run detekt on the main source set
+    source.setFrom(files(DEFAULT_SRC_DIR_KOTLIN))
+}
+
+tasks.withType<Detekt> {
     // Run detekt in parallel
     parallel = true
     // Define the detekt configuration you want to use.
@@ -20,11 +25,6 @@ extensions.configure<DetektExtension> {
     autoCorrect = true
     // Configure base path so detekt can properly format reports
     basePath = rootDir.absolutePath
-    // Run detekt on the main source set
-    source.setFrom(files(DEFAULT_SRC_DIR_KOTLIN))
-}
-
-tasks.withType<Detekt> {
     // Outputs dir
     reportsDir.set(file(rootDir.resolve("build/reports/detekt/${project.name}")))
     reports {

@@ -32,10 +32,10 @@ class AutoFactorySchema(
         } else if (hiltMultibindingAnnotation == HILT_MULTIBINDS_ANNOTATION) {
             require(
                 annotatedFunctionReturnType?.rawType == SET::class.asTypeName() ||
-                        annotatedFunctionReturnType?.rawType == MAP::class.asTypeName()
+                    annotatedFunctionReturnType?.rawType == MAP::class.asTypeName()
             ) {
                 "Function annotated with @AutoFactory(target = AutoFactoryTarget.MULTIBINDING_CONTAINER)" +
-                        " must return a Set or a Map"
+                    " must return a Set or a Map"
             }
         }
     }
