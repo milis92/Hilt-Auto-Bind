@@ -16,7 +16,7 @@ autoservice-ksp = "1.2.0"
 kotlin-poet = "1.18.1"
 hilt = "2.51.1"
 
-junit = "5.10.2"
+junit = "5.10.3"
 compile-testing = "0.5.1"
 
 [libraries]
