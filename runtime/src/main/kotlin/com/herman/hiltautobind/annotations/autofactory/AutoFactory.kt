@@ -24,7 +24,6 @@ enum class AutoFactoryTarget {
 
     /**
      * Bind specified type to a map of super types
-     * Return type must be a Map
      * @see <a href="https://dagger.dev/multibindings#map-multibindings">Map multibinding</a>
      */
     MAP,
@@ -38,7 +37,7 @@ enum class AutoFactoryTarget {
 
     /**
      * Binds a set container of the specified type
-     * Return type must be a Set
+     * Return type must be a Set or a Map
      * @see <a href="https://dagger.dev/multibindings">Multibindings</a>
      */
     MULTIBINDING_CONTAINER

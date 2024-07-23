@@ -1,11 +1,9 @@
 package com.herman.hiltautobind
 
 import com.tschuchort.compiletesting.SourceFile
-import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.extension.RegisterExtension
 import kotlin.test.Test
 
-@OptIn(ExperimentalCompilerApi::class)
 class HiltAutoFactoryTest {
     private companion object {
         @JvmField
@@ -283,7 +281,7 @@ class HiltAutoFactoryTest {
     }
 
     @Test
-    fun autoFactoryMultibindsReplacesProvide(){
+    fun autoFactoryMultibindsUsesElementsIntoSet(){
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt",
@@ -301,15 +299,17 @@ class HiltAutoFactoryTest {
         val provideSomething = ExpectedContent(
             """
             import dagger.Module
+            import dagger.Provides
             import dagger.hilt.InstallIn
             import dagger.hilt.components.SingletonComponent
-            import dagger.multibindings.Multibinds
+            import dagger.multibindings.ElementsIntoSet
             import kotlin.collections.Set
             
             @Module
             @InstallIn(SingletonComponent::class)
             public object Set_SingletonComponent_AutoFactoryModule {
-              @Multibinds
+              @Provides
+              @ElementsIntoSet
               public fun provideSomethingFactory(): Set<Something> = SomethingFactory();
             }
             """.trimIndent()
@@ -320,6 +320,54 @@ class HiltAutoFactoryTest {
             expectedContent = mapOf(
                 FileName("kotlin/Set_SingletonComponent_AutoFactoryModule.kt") to provideSomething,
             )
+        )
+    }
+
+    @Test
+    fun autoFactoryFailsIfTargetIsSetButReturnTypeIsNotSet(){
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactory
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactoryTarget
+            
+            interface Something
+            
+            @AutoFactory(target = AutoFactoryTarget.SET)
+            fun SomethingFactory(): String = "something"
+            """.trimIndent()
+        )
+
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(),
+            expectSuccess = false
+        )
+    }
+
+    @Test
+    fun autoFactoryFailsIfTargetIsMapButReturnTypeIsNotMap(){
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactory
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactoryTarget
+            
+            interface Something
+            
+            @AutoFactory(target = AutoFactoryTarget.MAP)
+            fun SomethingFactory(): String = "something"
+            """.trimIndent()
+        )
+
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(),
+            expectSuccess = false
         )
     }
 
@@ -484,4 +532,6 @@ class HiltAutoFactoryTest {
             )
         )
     }
+
+
 }

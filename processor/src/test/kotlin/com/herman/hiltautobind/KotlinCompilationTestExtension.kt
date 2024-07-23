@@ -15,8 +15,10 @@
  */
 package com.herman.hiltautobind
 
-import com.google.devtools.ksp.processing.SymbolProcessorProvider
-import com.tschuchort.compiletesting.*
+import com.tschuchort.compiletesting.KotlinCompilation
+import com.tschuchort.compiletesting.SourceFile
+import com.tschuchort.compiletesting.configureKsp
+import com.tschuchort.compiletesting.kspSourcesDir
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
@@ -27,12 +29,10 @@ import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import java.io.File
 import java.nio.file.Path
-import java.util.*
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteRecursively
 import kotlin.test.assertEquals
-import kotlin.test.fail
 
 @OptIn(ExperimentalCompilerApi::class)
 class KotlinCompilationTestExtension(
@@ -81,9 +81,7 @@ class KotlinCompilationTestExtension(
     fun compileAndAssert(
         sources: List<SourceFile>,
         expectedContent: Map<FileName, ExpectedContent>,
-        additionalAssertion: (JvmCompilationResult) -> Unit = {
-            assert(it.exitCode == KotlinCompilation.ExitCode.OK)
-        }
+        expectSuccess: Boolean = true
     ) {
         compiler.sources = sources
 
@@ -98,7 +96,12 @@ class KotlinCompilationTestExtension(
                 assertEquals(it.value.content, file.readText().trim())
             }
         }
-        additionalAssertion(compilationResult)
+
+        if (expectSuccess) {
+            assert(compilationResult.exitCode == KotlinCompilation.ExitCode.OK)
+        } else {
+            assert(compilationResult.exitCode != KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        }
     }
 
     private fun listGeneratedKotlinFilePaths() =

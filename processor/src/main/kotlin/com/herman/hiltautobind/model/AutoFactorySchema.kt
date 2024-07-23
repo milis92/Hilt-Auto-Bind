@@ -2,12 +2,13 @@ package com.herman.hiltautobind.model
 
 import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.symbol.*
-import com.herman.hiltautobind.annotations.autofactory.*
+import com.herman.hiltautobind.annotations.autofactory.AutoFactory
+import com.herman.hiltautobind.annotations.autofactory.AutoFactoryTarget
+import com.herman.hiltautobind.annotations.autofactory.TestAutoFactory
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
-import java.util.*
 
 @Suppress("LongParameterList")
 class AutoFactorySchema(
@@ -22,7 +23,25 @@ class AutoFactorySchema(
         originalDeclaration = functionDeclaration,
     )
 
-    val annotatedFunction: KSFunctionDeclaration = originalDeclaration as KSFunctionDeclaration
+    init {
+        val annotatedFunctionReturnType = annotatedFunctionReturnType as? ParameterizedTypeName
+        if (hiltMultibindingAnnotation == HILT_ELEMENTS_INTO_SET_ANNOTATION) {
+            require(annotatedFunctionReturnType?.rawType == SET::class.asTypeName()) {
+                "Function annotated with @AutoFactory(target = AutoFactoryTarget.SET_VALUES) must return a Set"
+            }
+        } else if (hiltMultibindingAnnotation == HILT_MULTIBINDS_ANNOTATION) {
+            require(
+                annotatedFunctionReturnType?.rawType == SET::class.asTypeName() ||
+                        annotatedFunctionReturnType?.rawType == MAP::class.asTypeName()
+            ) {
+                "Function annotated with @AutoFactory(target = AutoFactoryTarget.MULTIBINDING_CONTAINER)" +
+                        " must return a Set or a Map"
+            }
+        }
+    }
+
+    val annotatedFunction: KSFunctionDeclaration
+        get() = originalDeclaration as KSFunctionDeclaration
 
     val annotatedFunctionParameters = annotatedFunction.parameters.map(
         KSValueParameter::toParameterSpec
@@ -30,11 +49,13 @@ class AutoFactorySchema(
 
     val annotatedFunctionName = annotatedFunction.simpleName.asString()
 
-    val annotatedFunctionReturnType = requireNotNull(annotatedFunction.returnType?.toTypeName())
+    val annotatedFunctionReturnType
+        get() = requireNotNull(annotatedFunction.returnType?.toTypeName())
 
-    private val autoFactoryAnnotation: KSAnnotation = annotatedFunction.annotations.first { annotations ->
-        annotations.annotationType.toTypeName() in listOf(AUTO_FACTORY_ANNOTATION, TEST_AUTO_FACTORY_ANNOTATION)
-    }
+    private val autoFactoryAnnotation: KSAnnotation
+        get() = annotatedFunction.annotations.first { annotations ->
+            annotations.annotationType.toTypeName() in listOf(AUTO_FACTORY_ANNOTATION, TEST_AUTO_FACTORY_ANNOTATION)
+        }
 
     override val hiltComponent: ClassName
         get() = autoFactoryAnnotation.getArgumentClassName(

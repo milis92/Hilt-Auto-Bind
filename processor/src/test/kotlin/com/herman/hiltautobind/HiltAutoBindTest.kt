@@ -6,7 +6,6 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import kotlin.test.Ignore
 import kotlin.test.Test
 
-@OptIn(ExperimentalCompilerApi::class)
 class HiltAutoBindTest {
     private companion object {
         @JvmField
