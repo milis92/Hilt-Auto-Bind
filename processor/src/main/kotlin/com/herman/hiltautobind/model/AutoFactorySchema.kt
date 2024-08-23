@@ -26,14 +26,11 @@ class AutoFactorySchema(
     init {
         val annotatedFunctionReturnType = annotatedFunctionReturnType as? ParameterizedTypeName
         if (hiltMultibindingAnnotation == HILT_ELEMENTS_INTO_SET_ANNOTATION) {
-            require(annotatedFunctionReturnType?.rawType == SET::class.asTypeName()) {
+            require(annotatedFunctionReturnType?.rawType == SET) {
                 "Function annotated with @AutoFactory(target = AutoFactoryTarget.SET_VALUES) must return a Set"
             }
         } else if (hiltMultibindingAnnotation == HILT_MULTIBINDS_ANNOTATION) {
-            require(
-                annotatedFunctionReturnType?.rawType == SET::class.asTypeName() ||
-                    annotatedFunctionReturnType?.rawType == MAP::class.asTypeName()
-            ) {
+            require(annotatedFunctionReturnType?.rawType == SET || annotatedFunctionReturnType?.rawType == MAP) {
                 "Function annotated with @AutoFactory(target = AutoFactoryTarget.MULTIBINDING_CONTAINER)" +
                     " must return a Set or a Map"
             }

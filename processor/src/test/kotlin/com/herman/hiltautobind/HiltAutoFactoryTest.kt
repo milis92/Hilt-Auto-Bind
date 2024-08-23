@@ -36,7 +36,6 @@ class HiltAutoFactoryTest {
             """.trimIndent()
         )
 
-
         val provideSomething = ExpectedContent(
             """
             import dagger.Module
@@ -71,7 +70,7 @@ class HiltAutoFactoryTest {
     }
 
     @Test
-    fun autoFactoryPreservesFunctionArguments(){
+    fun autoFactoryPreservesFunctionArguments() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt",
@@ -240,7 +239,50 @@ class HiltAutoFactoryTest {
     }
 
     @Test
-    fun autoFactoryBindsToAMapWithMapTarget(){
+    fun autoFactoryBindsToASetWithSetValuesTarget() {
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactory
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactoryTarget
+            
+            interface Something
+            
+            @AutoFactory(target = AutoFactoryTarget.SET_VALUES)
+            fun SomethingFactory(): Set<Something> = setOf()
+            """.trimIndent()
+        )
+
+        val provideSomething = ExpectedContent(
+            """
+            import dagger.Module
+            import dagger.Provides
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import dagger.multibindings.ElementsIntoSet
+            import kotlin.collections.Set
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public object Set_SingletonComponent_AutoFactoryModule {
+              @Provides
+              @ElementsIntoSet
+              public fun provideSomethingFactory(): Set<Something> = SomethingFactory();
+            }
+            """.trimIndent()
+        )
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(
+                FileName("kotlin/Set_SingletonComponent_AutoFactoryModule.kt") to provideSomething,
+            )
+        )
+    }
+
+    @Test
+    fun autoFactoryBindsToAMapWithMapTarget() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt",
@@ -283,11 +325,10 @@ class HiltAutoFactoryTest {
                 FileName("kotlin/Something_SingletonComponent_AutoFactoryModule.kt") to provideSomething,
             )
         )
-
     }
 
     @Test
-    fun autoFactoryFailsIfTargetIsSetButReturnTypeIsNotSet(){
+    fun autoFactoryFailsIfTargetIsSetValuesButReturnTypeIsNotSet() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt",
@@ -297,7 +338,7 @@ class HiltAutoFactoryTest {
             
             interface Something
             
-            @AutoFactory(target = AutoFactoryTarget.SET)
+            @AutoFactory(target = AutoFactoryTarget.SET_VALUES)
             fun SomethingFactory(): String = "something"
             """.trimIndent()
         )
@@ -311,31 +352,7 @@ class HiltAutoFactoryTest {
     }
 
     @Test
-    fun autoFactoryFailsIfTargetIsMapButReturnTypeIsNotMap(){
-        // Given
-        val sourceFile = SourceFile.kotlin(
-            name = "Main.kt",
-            contents = """
-            import com.herman.hiltautobind.annotations.autofactory.AutoFactory
-            import com.herman.hiltautobind.annotations.autofactory.AutoFactoryTarget
-            
-            interface Something
-            
-            @AutoFactory(target = AutoFactoryTarget.MAP)
-            fun SomethingFactory(): String = "something"
-            """.trimIndent()
-        )
-
-        // Then
-        compilerExtension.compileAndAssert(
-            sources = listOf(sourceFile),
-            expectedContent = mapOf(),
-            expectSuccess = false
-        )
-    }
-
-    @Test
-    fun testAutoFactoryReplacesAutoFactoryModule(){
+    fun testAutoFactoryReplacesAutoFactoryModule() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt",
@@ -400,7 +417,7 @@ class HiltAutoFactoryTest {
     }
 
     @Test
-    fun autoFactoryGroupsProvidersOnTheSameModule(){
+    fun autoFactoryGroupsProvidersOnTheSameModule() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt",
@@ -446,7 +463,7 @@ class HiltAutoFactoryTest {
     }
 
     @Test
-    fun autoFactoryExcludesPackageNameInTheGeneratedModuleName(){
+    fun autoFactoryExcludesPackageNameInTheGeneratedModuleName() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt",
@@ -496,6 +513,4 @@ class HiltAutoFactoryTest {
             )
         )
     }
-
-
 }

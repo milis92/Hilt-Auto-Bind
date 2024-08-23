@@ -86,6 +86,21 @@ class KotlinCompilationTestExtension(
         compiler.sources = sources
 
         val compilationResult = compiler.compile()
+
+        if (expectSuccess) {
+            assertEquals(
+                expected = KotlinCompilation.ExitCode.OK,
+                actual = compilationResult.exitCode,
+                message = compilationResult.messages
+            )
+        } else {
+            assertEquals(
+                expected = KotlinCompilation.ExitCode.COMPILATION_ERROR,
+                actual = compilationResult.exitCode,
+                message = compilationResult.messages
+            )
+        }
+
         expectedContent.forEach {
             val file = compiler.kspSourcesDir.resolve(it.key.name)
             if (!file.exists()) {
@@ -95,12 +110,6 @@ class KotlinCompilationTestExtension(
             } else {
                 assertEquals(it.value.content, file.readText().trim())
             }
-        }
-
-        if (expectSuccess) {
-            assert(compilationResult.exitCode == KotlinCompilation.ExitCode.OK)
-        } else {
-            assert(compilationResult.exitCode != KotlinCompilation.ExitCode.COMPILATION_ERROR)
         }
     }
 
