@@ -3,6 +3,7 @@ package com.herman.hiltautobind.generator
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.symbol.Visibility
 import com.herman.hiltautobind.model.HiltAutoBindSchema
+import com.herman.hiltautobind.model.toClassName
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.writeTo
 import dagger.hilt.InstallIn
@@ -46,7 +47,11 @@ abstract class HiltAutoBindModuleGenerator<T : HiltAutoBindSchema> {
     private fun FileSpec.Builder.addImportIfTest(schemas: List<T>): FileSpec.Builder {
         schemas.forEach { schema ->
             if (schema.isTestModule) {
-                addImport(schema.hiltReplacesModuleName.packageName, schema.hiltReplacesModuleName.simpleNames)
+                val hiltReplacesModuleSimpleName = schema.hiltReplacesModuleName.toClassName()
+                addImport(
+                    hiltReplacesModuleSimpleName.packageName,
+                    hiltReplacesModuleSimpleName.simpleNames
+                )
             }
         }
         return this

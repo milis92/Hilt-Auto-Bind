@@ -4,6 +4,7 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.herman.hiltautobind.model.AutoFactorySchema
+import com.herman.hiltautobind.model.toClassName
 import com.squareup.kotlinpoet.ClassName
 
 class AutoFactoryVisitor(
@@ -19,7 +20,7 @@ class AutoFactoryVisitor(
         .distinct()
         .map { symbol -> symbol.accept(this, Unit) }
         .filterNotNull()
-        .groupBy { schema -> schema.hiltModuleName }
+        .groupBy { schema -> schema.hiltModuleName.toClassName() }
 
     override fun visitFunctionDeclaration(
         function: KSFunctionDeclaration,

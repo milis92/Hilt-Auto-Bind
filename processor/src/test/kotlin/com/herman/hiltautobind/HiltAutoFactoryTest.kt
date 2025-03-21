@@ -82,7 +82,7 @@ class HiltAutoFactoryTest {
             @AutoFactory
             fun ProvidesSomething(someArgument: String): Something = SomethingImpl(something)
             
-            internal class SomethingImpl(something: String) : SomethingElse
+            internal class SomethingImpl(something: String) : Something
             """.trimIndent()
         )
 
@@ -141,6 +141,46 @@ class HiltAutoFactoryTest {
             internal object Something_SingletonComponent_AutoFactoryModule {
               @Provides
               internal fun provideSomethingFactory(): Something = SomethingFactory();
+            }
+            """.trimIndent()
+        )
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(
+                FileName("kotlin/Something_SingletonComponent_AutoFactoryModule.kt") to provideSomething,
+            )
+        )
+    }
+
+    @Test
+    fun autoFactoryPreservesSuperTypeTypeArgument() {
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactory
+            
+            interface Something<T: Any>
+            
+            @AutoFactory
+            internal fun SomethingFactory(): Something<Any> = object : Something<Any> {}
+            """.trimIndent()
+        )
+
+        val provideSomething = ExpectedContent(
+            """
+            import dagger.Module
+            import dagger.Provides
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import kotlin.Any
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            internal object Something_SingletonComponent_AutoFactoryModule {
+              @Provides
+              internal fun provideSomethingFactory(): Something<Any> = SomethingFactory();
             }
             """.trimIndent()
         )

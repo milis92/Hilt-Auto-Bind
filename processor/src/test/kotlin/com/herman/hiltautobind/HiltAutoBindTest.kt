@@ -190,6 +190,47 @@ class HiltAutoBindTest {
     }
 
     @Test
+    fun autoBindPreservesSuperTypeTypeArguments(){
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            import com.herman.hiltautobind.annotations.autobind.AutoBind
+            
+            interface Something<T: Any>
+            
+            @AutoBind
+            internal class SomethingImpl : Something<Any>
+            """.trimIndent()
+        )
+
+        val expectedContent = ExpectedContent(
+            """
+            import dagger.Binds
+            import dagger.Module
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import kotlin.Any
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            internal interface Something_SingletonComponent_Module {
+              @Binds
+              public fun bindSomethingImpl(implementation: SomethingImpl): Something<Any>
+            }
+            """.trimIndent()
+        )
+
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(
+                FileName("kotlin/Something_SingletonComponent_Module.kt") to expectedContent
+            )
+        )
+    }
+
+    @Test
     fun autoBindBindsToItselfWhenNoSuperType() {
         // Given
         val sourceFile = SourceFile.kotlin(

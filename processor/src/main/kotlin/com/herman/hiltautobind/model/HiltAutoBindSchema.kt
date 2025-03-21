@@ -23,12 +23,12 @@ interface HiltAutoBindSchema {
     val containingFile: KSFile
     val originalDeclaration: KSDeclaration
     val hiltModuleType: HiltModuleType
-    val hiltModuleName: ClassName
+    val hiltModuleName: TypeName
     val hiltModuleVisibility: Visibility
-    val hiltComponent: ClassName
+    val hiltComponent: TypeName
     val hiltFunctionAnnotations: List<AnnotationSpec>
     val hiltFunctionName: String
-    val hiltReplacesModuleName: ClassName
+    val hiltReplacesModuleName: TypeName
     val isTestModule: Boolean
 
     enum class HiltModuleType {
@@ -47,18 +47,18 @@ fun KSAnnotation.getDefaultArgument(
 
 fun KSAnnotation.getArgumentClassName(
     name: String
-): ClassName? = getArgument(name)?.let { (it as? KSType)?.toClassName() }
+): TypeName? = getArgument(name)?.let { (it as? KSType)?.toTypeName() }
 
 fun KSAnnotation.getDefaultArgumentClassName(
     name: String
-): ClassName? = getDefaultArgument(name)?.let { (it as? KSType)?.toClassName() }
+): TypeName? = getDefaultArgument(name)?.let { (it as? KSType)?.toTypeName() }
 
 fun KSAnnotation.getArgumentClassNameIfNotDefault(
     name: String
-): ClassName? = getArgumentClassName(name)?.takeIf { it != getDefaultArgumentClassName(name) }
+): TypeName? = getArgumentClassName(name)?.takeIf { it != getDefaultArgumentClassName(name) }
 
-fun KSClassDeclaration.getFirstNonAnySuperType(): ClassName? = superTypes.map {
-    it.resolve().toClassName()
+fun KSClassDeclaration.getFirstNonAnySuperType(): TypeName? = superTypes.map {
+    it.resolve().toTypeName()
 }.firstOrNull { it != ANY }
 
 fun KSValueParameter.toParameterSpec(): ParameterSpec {
@@ -75,4 +75,8 @@ fun KSValueParameter.toParameterSpec(): ParameterSpec {
     ).addAnnotations(
         annotations.map { it.toAnnotationSpec(true) }.toList()
     ).build()
+}
+
+fun TypeName.toClassName(): ClassName {
+    (this as? ClassName)?.let { return it } ?: return ClassName.bestGuess(this.toString())
 }

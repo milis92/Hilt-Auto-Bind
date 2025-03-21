@@ -4,6 +4,7 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.herman.hiltautobind.model.AutoBindSchema
+import com.herman.hiltautobind.model.toClassName
 import com.squareup.kotlinpoet.ClassName
 
 class AutoBindVisitor(
@@ -19,7 +20,7 @@ class AutoBindVisitor(
         .distinct()
         .map { symbol -> symbol.accept(this, Unit) }
         .filterNotNull()
-        .groupBy { schema -> schema.hiltModuleName }
+        .groupBy { schema -> schema.hiltModuleName.toClassName() }
 
     override fun visitClassDeclaration(
         classDeclaration: KSClassDeclaration,

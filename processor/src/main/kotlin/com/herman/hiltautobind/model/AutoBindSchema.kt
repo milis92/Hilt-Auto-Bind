@@ -24,7 +24,7 @@ class AutoBindSchema private constructor(
 
     // Read the superType from the annotation if the superType is not the default superType,
     // otherwise use the first superType of the annotated class
-    val boundSuperType: ClassName
+    val boundSuperType: TypeName
         get() = autoBindAnnotation.getArgumentClassNameIfNotDefault(
             autoBindAnnotation.getBoundSuperTypeArgumentName
         ) ?: annotatedClass.getFirstNonAnySuperType() ?: annotatedClass.toClassName()
@@ -33,7 +33,7 @@ class AutoBindSchema private constructor(
         annotations.annotationType.toTypeName() in listOf(BIND_ANNOTATION, TEST_BIND_ANNOTATION)
     }
 
-    override val hiltComponent: ClassName
+    override val hiltComponent: TypeName
         get() = autoBindAnnotation.getArgumentClassName(
             autoBindAnnotation.getHiltComponentArgumentName
         ) ?: HILT_SINGLETON_COMPONENT
@@ -44,21 +44,22 @@ class AutoBindSchema private constructor(
         HiltAutoBindSchema.HiltModuleType.INTERFACE
 
     private val hiltModuleClassSimpleName
-        get() = (boundSuperType.simpleNames).joinToString("")
+        get() = (boundSuperType as? ParameterizedTypeName)?.rawType?.simpleName
+            ?: boundSuperType.toClassName().simpleName
 
-    override val hiltModuleName: ClassName
+    override val hiltModuleName: TypeName
         get() = ClassName(
             packageName = containingFile.packageName.asString(),
             simpleNames = listOf(
                 (if (isTestModule) HILT_TEST_MODULE_NAME_FORMAT else HILT_MODULE_NAME_FORMAT)
-                    .format(hiltModuleClassSimpleName, hiltComponent.simpleName)
+                    .format(hiltModuleClassSimpleName, hiltComponent.toClassName().simpleName)
             )
         )
 
-    override val hiltReplacesModuleName: ClassName = ClassName(
+    override val hiltReplacesModuleName: TypeName = ClassName(
         packageName = containingFile.packageName.asString(),
         simpleNames = listOf(
-            HILT_MODULE_NAME_FORMAT.format(hiltModuleClassSimpleName, hiltComponent.simpleName)
+            HILT_MODULE_NAME_FORMAT.format(hiltModuleClassSimpleName, hiltComponent.toClassName().simpleName)
         )
     )
 
@@ -75,7 +76,7 @@ class AutoBindSchema private constructor(
         get() = when (
             autoBindAnnotation.getArgumentClassName(
                 autoBindAnnotation.getAutoBindTargetArgumentName
-            )?.simpleName
+            )?.toClassName()?.simpleName
         ) {
             AutoBindTarget.INSTANCE.name -> null
             AutoBindTarget.SET.name -> HILT_INTO_SET_ANNOTATION

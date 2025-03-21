@@ -54,7 +54,7 @@ class AutoFactorySchema(
             annotations.annotationType.toTypeName() in listOf(AUTO_FACTORY_ANNOTATION, TEST_AUTO_FACTORY_ANNOTATION)
         }
 
-    override val hiltComponent: ClassName
+    override val hiltComponent: TypeName
         get() = autoFactoryAnnotation.getArgumentClassName(
             autoFactoryAnnotation.getHiltComponentArgumentName
         ) ?: HILT_SINGLETON_COMPONENT
@@ -67,19 +67,19 @@ class AutoFactorySchema(
     private val hiltModuleClassSimpleName
         get() = annotatedFunction.returnType?.resolve()?.toClassName()?.simpleNames?.joinToString("")
 
-    override val hiltModuleName: ClassName = ClassName(
+    override val hiltModuleName: TypeName = ClassName(
         packageName = containingFile.packageName.asString(),
         simpleNames = listOf(
             (if (isTestModule) HILT_TEST_MODULE_NAME_FORMAT else HILT_MODULE_NAME_FORMAT)
-                .format(hiltModuleClassSimpleName, hiltComponent.simpleName)
+                .format(hiltModuleClassSimpleName, hiltComponent.toClassName().simpleName)
         )
     )
 
-    override val hiltReplacesModuleName: ClassName
+    override val hiltReplacesModuleName: TypeName
         get() = ClassName(
             packageName = containingFile.packageName.asString(),
             simpleNames = listOf(
-                HILT_MODULE_NAME_FORMAT.format(hiltModuleClassSimpleName, hiltComponent.simpleName)
+                HILT_MODULE_NAME_FORMAT.format(hiltModuleClassSimpleName, hiltComponent.toClassName().simpleName)
             )
         )
 
@@ -98,7 +98,7 @@ class AutoFactorySchema(
         get() = when (
             autoFactoryAnnotation.getArgumentClassName(
                 autoFactoryAnnotation.getAutoBindTargetArgumentName
-            )?.simpleName
+            )?.toClassName()?.simpleName
         ) {
             AutoFactoryTarget.INSTANCE.name -> null
             AutoFactoryTarget.SET.name -> HILT_INTO_SET_ANNOTATION
