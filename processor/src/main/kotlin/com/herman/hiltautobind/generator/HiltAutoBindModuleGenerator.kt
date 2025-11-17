@@ -7,58 +7,64 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.writeTo
 import dagger.hilt.InstallIn
 
-abstract class HiltAutoBindModuleGenerator<T : HiltAutoBindSchema> {
+abstract class HiltAutoBindModuleGenerator<in T : HiltAutoBindSchema> {
     fun generate(
         codeGenerator: CodeGenerator,
-        className: ClassName,
-        schemas: List<T>
-    ) = FileSpec.builder(className = className)
-        .addType(buildHiltModuleClass(className, schemas))
-        .build()
-        .writeTo(
-            codeGenerator = codeGenerator,
-            aggregating = true,
-            originatingKSFiles = schemas.map {
-                it.containingFile
-            }
-        )
+        schema: T,
+    ) {
+        FileSpec.builder(className = schema.hiltModuleClassName)
+            .addType(buildHiltModuleClass(schema))
+            .build()
+            .writeTo(
+                codeGenerator = codeGenerator,
+                aggregating = true,
+                originatingKSFiles = listOf(schema.containingFile)
+            )
+    }
 
     private fun buildHiltModuleClass(
-        className: ClassName,
-        schemas: List<T>
-    ): TypeSpec = when (schemas.first().hiltModuleType) {
+        schema: T
+    ): TypeSpec = when (schema.hiltModuleType) {
         HiltAutoBindSchema.HiltModuleType.OBJECT ->
-            TypeSpec.objectBuilder(className = className)
+            TypeSpec.objectBuilder(className = schema.hiltModuleClassName)
 
         HiltAutoBindSchema.HiltModuleType.INTERFACE ->
-            TypeSpec.interfaceBuilder(className = className)
-    }.addAnnotation(daggerModuleClassName)
-        .addAnnotation(getInstallInAnnotationSpec(schemas.first()))
+            TypeSpec.interfaceBuilder(className = schema.hiltModuleClassName)
+    }
+        .addAnnotation(DAGGER_MODULE)
+        .addAnnotation(buildInstallInAnnotation(schema))
         .addModifiers(
-            schemas.any { it.hiltModuleVisibility == Visibility.INTERNAL }.let {
-                if (it) KModifier.INTERNAL else KModifier.PUBLIC
+            if (schema.hiltModuleVisibility == Visibility.INTERNAL) {
+                KModifier.INTERNAL
+            } else {
+                KModifier.PUBLIC
             }
         )
-        .addFunctions(schemas.map { buildHiltProvideFunction(it) })
+        .addFunction(buildHiltProvideFunction(schema))
         .build()
 
-    private fun getInstallInAnnotationSpec(schema: T): AnnotationSpec =
-        if (schema.isTestModule) {
-            AnnotationSpec.builder(testInstallInClassName)
-                .addMember("components = [%T::class]", schema.hiltComponent)
-                .addMember("replaces = [%T::class]", schema.hiltReplacesModuleName)
-                .build()
-        } else {
-            AnnotationSpec.builder(installInClassName)
+    private fun buildInstallInAnnotation(schema: T): AnnotationSpec {
+        val replaceModule = schema.hiltReplacesModuleName
+        return if (replaceModule == null) {
+            AnnotationSpec.builder(INSTALL_IN)
                 .addMember("%T::class", schema.hiltComponent)
                 .build()
+        } else {
+            AnnotationSpec.builder(TEST_INSTALL_IN)
+                .addMember("components = [%T::class]", schema.hiltComponent)
+                .addMember("replaces = [%T::class]", replaceModule)
+                .build()
         }
+    }
 
-    abstract fun buildHiltProvideFunction(schema: T): FunSpec
+    protected abstract fun buildHiltProvideFunction(schema: T): FunSpec
 
     companion object {
-        private val daggerModuleClassName = dagger.Module::class.asClassName()
-        private val installInClassName = InstallIn::class.asClassName()
-        private val testInstallInClassName = ClassName(packageName = "dagger.hilt.testing", "TestInstallIn")
+        private val DAGGER_MODULE =
+            dagger.Module::class.asClassName()
+        private val INSTALL_IN =
+            InstallIn::class.asClassName()
+        private val TEST_INSTALL_IN =
+            ClassName(packageName = "dagger.hilt.testing", "TestInstallIn")
     }
 }

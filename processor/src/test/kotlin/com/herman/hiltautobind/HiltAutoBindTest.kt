@@ -1,17 +1,15 @@
 package com.herman.hiltautobind
 
 import com.tschuchort.compiletesting.SourceFile
-import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.extension.RegisterExtension
-import kotlin.test.Ignore
 import kotlin.test.Test
 
-@OptIn(ExperimentalCompilerApi::class)
 class HiltAutoBindTest {
     private companion object {
         @JvmField
         @RegisterExtension
-        var compilerExtension = KotlinCompilationTestExtension()
+        var compilerExtension =
+            KotlinCompilationTestExtension(cleanUp = false)
     }
 
     @Test
@@ -191,6 +189,47 @@ class HiltAutoBindTest {
     }
 
     @Test
+    fun autoBindPreservesSuperTypeTypeArguments() {
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            import com.herman.hiltautobind.annotations.autobind.AutoBind
+            
+            interface Something<T: Any>
+            
+            @AutoBind
+            internal class SomethingImpl : Something<Any>
+            """.trimIndent()
+        )
+
+        val expectedContent = ExpectedContent(
+            """
+            import dagger.Binds
+            import dagger.Module
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import kotlin.Any
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            internal interface Something_SingletonComponent_Module {
+              @Binds
+              public fun bindSomethingImpl(implementation: SomethingImpl): Something<Any>
+            }
+            """.trimIndent()
+        )
+
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(
+                FileName("kotlin/Something_SingletonComponent_Module.kt") to expectedContent
+            )
+        )
+    }
+
+    @Test
     fun autoBindBindsToItselfWhenNoSuperType() {
         // Given
         val sourceFile = SourceFile.kotlin(
@@ -359,13 +398,14 @@ class HiltAutoBindTest {
         )
     }
 
-    @Ignore("This fill fail due to missing TestInstallIn annotation that will be available in test sources")
     @Test
     fun testAutoBindReplacesAutoBindModule() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt",
             contents = """
+            package com.herman.hiltautobind.test
+            
             import com.herman.hiltautobind.annotations.autobind.TestAutoBind
             import com.herman.hiltautobind.annotations.autobind.AutoBind
             
@@ -381,6 +421,8 @@ class HiltAutoBindTest {
 
         val expectedRuntimeComponent = ExpectedContent(
             """
+            package com.herman.hiltautobind.test
+            
             import dagger.Binds
             import dagger.Module
             import dagger.hilt.InstallIn
@@ -397,14 +439,17 @@ class HiltAutoBindTest {
 
         val expectedTestComponent = ExpectedContent(
             """
+            package com.herman.hiltautobind.test
+            
             import dagger.Binds
             import dagger.Module
             import dagger.hilt.components.SingletonComponent
+            import dagger.hilt.testing.TestInstallIn
             
             @Module
             @TestInstallIn(
               components = [SingletonComponent::class],
-              replaces = [Something_SingletonComponent_Module::class]
+              replaces = [Something_SingletonComponent_Module::class],
             )
             public interface Something_SingletonComponent_TestModule {
               @Binds
@@ -417,14 +462,14 @@ class HiltAutoBindTest {
         compilerExtension.compileAndAssert(
             sources = listOf(sourceFile),
             expectedContent = mapOf(
-                FileName("kotlin/Something_SingletonComponent_Module.kt") to expectedRuntimeComponent,
-                FileName("kotlin/Something_SingletonComponent_TestModule.kt") to expectedTestComponent
+                FileName("kotlin/com/herman/hiltautobind/test/Something_SingletonComponent_Module.kt") to expectedRuntimeComponent,
+                FileName("kotlin/com/herman/hiltautobind/test/Something_SingletonComponent_TestModule.kt") to expectedTestComponent
             )
         )
     }
 
     @Test
-    fun autoBindGroupsProvidersOnTheSameBoundType(){
+    fun autoBindSeparatesQualifiedDependencies() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt",
@@ -449,14 +494,27 @@ class HiltAutoBindTest {
             import dagger.Module
             import dagger.hilt.InstallIn
             import dagger.hilt.components.SingletonComponent
-            import javax.inject.Named
             
             @Module
             @InstallIn(SingletonComponent::class)
             public interface Something_SingletonComponent_Module {
               @Binds
               public fun bindSomethingImpl(implementation: SomethingImpl): Something
+            }
+            """.trimIndent()
+        )
+
+        val expectedQualifiedContent = ExpectedContent(
+            """
+            import dagger.Binds
+            import dagger.Module
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import javax.inject.Named
             
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public interface Something1294259891_SingletonComponent_Module {
               @Binds
               @Named(`value` = "somethingElse")
               public fun bindSomethingElseImpl(implementation: SomethingElseImpl): Something
@@ -468,13 +526,14 @@ class HiltAutoBindTest {
         compilerExtension.compileAndAssert(
             sources = listOf(sourceFile),
             expectedContent = mapOf(
-                FileName("kotlin/Something_SingletonComponent_Module.kt") to expectedContent
+                FileName("kotlin/Something_SingletonComponent_Module.kt") to expectedContent,
+                FileName("kotlin/Something1294259891_SingletonComponent_Module.kt") to expectedQualifiedContent
             )
         )
     }
 
     @Test
-    fun autoBindExcludesPackageNameInTheGeneratedModuleName (){
+    fun autoBindExcludesPackageNameInTheGeneratedModuleName() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt",
@@ -515,6 +574,97 @@ class HiltAutoBindTest {
                 FileName(
                     "kotlin/com/herman/hiltautobind/test/Something_SingletonComponent_Module.kt"
                 ) to expectedContent
+            )
+        )
+    }
+
+    @Test
+    fun testAutoBindWithNamedQualifierReplacesQualifiedAutoBindModule() {
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            import com.herman.hiltautobind.annotations.autobind.AutoBind
+            import com.herman.hiltautobind.annotations.autobind.TestAutoBind
+            import javax.inject.Named
+            
+            interface Something
+            
+            @AutoBind(superType = Something::class)
+            class SomethingImpl : Something
+            
+            @Named("somethingElse")
+            @AutoBind(superType = Something::class)
+            class SomethingElseImpl: Something
+            
+            @Named("somethingElse")
+            @TestAutoBind(superType = Something::class)
+            class SomethingElseStub: Something
+            """.trimIndent()
+        )
+
+        val expectedUnqualifiedRuntimeModule = ExpectedContent(
+            """
+            import dagger.Binds
+            import dagger.Module
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public interface Something_SingletonComponent_Module {
+              @Binds
+              public fun bindSomethingImpl(implementation: SomethingImpl): Something
+            }
+            """.trimIndent()
+        )
+
+        val expectedQualifiedRuntimeModule = ExpectedContent(
+            """
+            import dagger.Binds
+            import dagger.Module
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import javax.inject.Named
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public interface Something1294259891_SingletonComponent_Module {
+              @Binds
+              @Named(`value` = "somethingElse")
+              public fun bindSomethingElseImpl(implementation: SomethingElseImpl): Something
+            }
+            """.trimIndent()
+        )
+
+        val expectedQualifiedTestModule = ExpectedContent(
+            """
+            import dagger.Binds
+            import dagger.Module
+            import dagger.hilt.components.SingletonComponent
+            import dagger.hilt.testing.TestInstallIn
+            import javax.inject.Named
+            
+            @Module
+            @TestInstallIn(
+              components = [SingletonComponent::class],
+              replaces = [Something1294259891_SingletonComponent_Module::class],
+            )
+            public interface Something1294259891_SingletonComponent_TestModule {
+              @Binds
+              @Named(`value` = "somethingElse")
+              public fun bindSomethingElseStub(implementation: SomethingElseStub): Something
+            }
+            """.trimIndent()
+        )
+
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(
+                FileName("kotlin/Something_SingletonComponent_Module.kt") to expectedUnqualifiedRuntimeModule,
+                FileName("kotlin/Something1294259891_SingletonComponent_Module.kt") to expectedQualifiedRuntimeModule,
+                FileName("kotlin/Something1294259891_SingletonComponent_TestModule.kt") to expectedQualifiedTestModule,
             )
         )
     }

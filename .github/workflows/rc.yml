@@ -14,15 +14,19 @@ jobs:
   verify:
     name: Verify
     uses: ./.github/workflows/template_check.yml
+    secrets: inherit
+
 
   test:
     name: Test
     uses: ./.github/workflows/template_test.yml
+    secrets: inherit
 
   deploy:
     name: Deploy
     needs:
       - verify
+      - test
     uses: ./.github/workflows/template_deploy.yml
     with:
       STAGE: rc

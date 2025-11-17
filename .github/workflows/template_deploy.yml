@@ -20,32 +20,29 @@ on:
       REPOSITORY_PASSWORD:
         description: 'OSS password'
         required: true
+      GRADLE_CACHE_ENCRYPTION_KEY:
+        required: true
+        description: "Key used to encrypt the cached files"
 
 jobs:
-  verify:
-    name: Verify gradle plugin
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: gradle/actions/wrapper-validation@v3
-
   deploy:
     name: Deploy
     runs-on: macos-latest
-    needs:
-      - verify
     outputs:
       version: ${{ steps.extract_version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
-          distribution: 'adopt'
-          java-version: 17
-      - uses: gradle/actions/setup-gradle@v3
+          distribution: 'temurin'
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
         with:
+          cache-encryption-key: ${{ inputs.GRADLE_CACHE_ENCRYPTION_KEY }}
+          cache-overwrite-existing: true
+          cache-cleanup: always
           cache-read-only: false
       - run: |
           if [ "${{ github.ref_type }}" != "tag" ]; then

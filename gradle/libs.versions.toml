@@ -1,23 +1,23 @@
 [versions]
-java = "17"
-kotlin = "2.0.0"
+java = "21"
+kotlin = "2.2.21"
 
-ksp = "2.0.0-1.0.23"
+ksp = "2.3.2"
 
 detekt = "1.23.6"
 dokka = "1.9.20"
 
-maven-publish = "0.29.0"
-build-config = "5.3.5"
+maven-publish = "0.35.0"
+build-config = "5.7.1"
 
 autoservice-annotations = "1.1.1"
 autoservice-ksp = "1.2.0"
 
-kotlin-poet = "1.18.1"
-hilt = "2.51.1"
+kotlin-poet = "2.2.0"
+hilt = "2.57.1"
 
 junit = "5.10.2"
-compile-testing = "0.5.1"
+compile-testing = "0.11.0"
 
 [libraries]
 # build
