@@ -20,6 +20,9 @@ on:
       REPOSITORY_PASSWORD:
         description: 'OSS password'
         required: true
+      GRADLE_CACHE_ENCRYPTION_KEY:
+        required: true
+        description: "Key used to encrypt the cached files"
 
 jobs:
   deploy:
@@ -37,6 +40,7 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
         with:
+          cache-encryption-key: ${{ inputs.GRADLE_CACHE_ENCRYPTION_KEY }}
           cache-overwrite-existing: true
           cache-cleanup: always
           cache-read-only: false

@@ -1,7 +1,6 @@
 package com.herman.hiltautobind.generator
 
 import com.google.devtools.ksp.processing.CodeGenerator
-import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.Visibility
 import com.herman.hiltautobind.model.HiltAutoBindSchema
 import com.squareup.kotlinpoet.*

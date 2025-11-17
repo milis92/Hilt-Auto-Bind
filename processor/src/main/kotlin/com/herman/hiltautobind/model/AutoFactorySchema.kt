@@ -19,7 +19,6 @@ import com.herman.hiltautobind.model.utils.toClassName
 import com.herman.hiltautobind.model.utils.toParameterSpec
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
-import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 
 @Suppress("LongParameterList")
@@ -41,9 +40,11 @@ class AutoFactorySchema(
         }
 
     private val autoFactoryAnnotation: KSAnnotation =
-        requireNotNull(annotatedFunction.annotations.firstOrNull { annotations ->
-            annotations.annotationType.toTypeName() in listOf(AUTO_FACTORY_ANNOTATION, TEST_AUTO_FACTORY_ANNOTATION)
-        }) {
+        requireNotNull(
+            annotatedFunction.annotations.firstOrNull { annotations ->
+                annotations.annotationType.toTypeName() in listOf(AUTO_FACTORY_ANNOTATION, TEST_AUTO_FACTORY_ANNOTATION)
+            }
+        ) {
             "No valid @AutoFactory or @TestAutoFactory annotation found on ${annotatedFunction.simpleName}"
         }
 
@@ -101,7 +102,7 @@ class AutoFactorySchema(
 
     // Hilt Module provider function name.
     override val hiltFunctionName: String =
-        "$PROVIDES_METHOD_NAME_PREFIX${factorFunctionName.replaceFirstChar { 
+        "$PROVIDES_METHOD_NAME_PREFIX${factorFunctionName.replaceFirstChar {
             if (it.isLowerCase()) it.titlecase() else it.toString()
         }}"
 
@@ -121,7 +122,9 @@ class AutoFactorySchema(
                     HILT_MODULE_NAME_FORMAT.format(simpleHiltModuleName, hiltComponent.toClassName().simpleName)
                 )
             )
-        } else null
+        } else {
+            null
+        }
 
     private val hiltMultibindingAnnotation: AnnotationSpec?
         get() = when (
@@ -142,8 +145,10 @@ class AutoFactorySchema(
     private val simpleHiltModuleName: String
         get() {
             val boundTypeSimpleName =
-                ((factoryFunctionReturnType as? ParameterizedTypeName)?.rawType
-                    ?: factoryFunctionReturnType.toClassName())
+                (
+                    (factoryFunctionReturnType as? ParameterizedTypeName)?.rawType
+                        ?: factoryFunctionReturnType.toClassName()
+                    )
                     .simpleName
 
             val qualifier = annotatedFunction.findNestedAnnotationWithMarker(

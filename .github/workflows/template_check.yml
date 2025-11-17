@@ -2,6 +2,10 @@ name: Check
 
 on:
   workflow_call:
+    secrets:
+      GRADLE_CACHE_ENCRYPTION_KEY:
+        required: true
+        description: "Key used to encrypt the cached files"
 
 jobs:
   build:
@@ -17,11 +21,13 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
         with:
+          cache-encryption-key: ${{ inputs.GRADLE_CACHE_ENCRYPTION_KEY }}
           cache-overwrite-existing: true
           cache-cleanup: always
           cache-read-only: false
       - run: ./gradlew check -x test
       - uses: reviewdog/action-setup@v1
+        if: always()
       - name: Run reviewdog for each SARIF file
         if: always()
         env:

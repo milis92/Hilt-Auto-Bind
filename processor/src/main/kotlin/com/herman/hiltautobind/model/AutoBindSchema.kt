@@ -35,9 +35,11 @@ class AutoBindSchema(
         }
 
     private val autoBindAnnotation: KSAnnotation =
-        requireNotNull(annotatedClass.annotations.firstOrNull { annotations ->
-            annotations.annotationType.toTypeName() in listOf(BIND_ANNOTATION, TEST_BIND_ANNOTATION)
-        }) {
+        requireNotNull(
+            annotatedClass.annotations.firstOrNull { annotations ->
+                annotations.annotationType.toTypeName() in listOf(BIND_ANNOTATION, TEST_BIND_ANNOTATION)
+            }
+        ) {
             "No valid @AutoBind or @TestAutoBind annotation found on class ${annotatedClass.simpleName}"
         }
 
@@ -118,9 +120,9 @@ class AutoBindSchema(
     // Hilt Module provider function annotations
     override val hiltFunctionAnnotations: List<AnnotationSpec> =
         listOfNotNull(HILT_BINDS_ANNOTATION, hiltMultibindingAnnotation) +
-                annotatedClass.annotations.filterNot { annotations ->
-                    annotations.annotationType.toTypeName() in listOf(BIND_ANNOTATION, TEST_BIND_ANNOTATION)
-                }.map { it.toAnnotationSpec(true) }.toList()
+            annotatedClass.annotations.filterNot { annotations ->
+                annotations.annotationType.toTypeName() in listOf(BIND_ANNOTATION, TEST_BIND_ANNOTATION)
+            }.map { it.toAnnotationSpec(true) }.toList()
 
     // Hilt Test install in module to be replaced
     override val hiltReplacesModuleName: ClassName? =
@@ -129,11 +131,14 @@ class AutoBindSchema(
                 packageName = boundType.toClassName().packageName,
                 simpleNames = listOf(
                     HILT_MODULE_NAME_FORMAT.format(
-                        simpleHiltModuleName, hiltComponent.toClassName().simpleName
+                        simpleHiltModuleName,
+                        hiltComponent.toClassName().simpleName
                     )
                 )
             )
-        } else null
+        } else {
+            null
+        }
 
     private val isTestModule: Boolean
         get() = autoBindAnnotation.annotationType.toTypeName() == TEST_BIND_ANNOTATION
@@ -152,9 +157,11 @@ class AutoBindSchema(
         }
 
     private val hiltMultibindingAnnotation: AnnotationSpec?
-        get() = when (autoBindAnnotation.argumentTypeName(
-            autoBindAnnotation.bindTargetArgumentName
-        )?.toClassName()?.simpleName) {
+        get() = when (
+            autoBindAnnotation.argumentTypeName(
+                autoBindAnnotation.bindTargetArgumentName
+            )?.toClassName()?.simpleName
+        ) {
             AutoBindTarget.SET.name -> HILT_INTO_SET_ANNOTATION
             AutoBindTarget.MAP.name -> HILT_INTO_MAP_ANNOTATION
             AutoBindTarget.INSTANCE.name -> null

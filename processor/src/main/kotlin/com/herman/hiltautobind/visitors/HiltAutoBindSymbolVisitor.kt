@@ -15,7 +15,7 @@ abstract class HiltAutoBindSymbolVisitor<T : HiltAutoBindSchema> : KSDefaultVisi
      * This method is used to scan and group specific annotated elements into modules,
      * facilitating further processing or code generation.
      *
-     * @param resolver The [com.google.devtools.ksp.processing.Resolver] instance used to resolve symbols and annotations
+     * @param resolver The instance used to resolve symbols and annotations
      *                 within the current context of Kotlin symbol processing.
      * @return A list of schema objects of a type [T]
      */
@@ -26,7 +26,8 @@ abstract class HiltAutoBindSymbolVisitor<T : HiltAutoBindSchema> : KSDefaultVisi
      * during processing. This method is invoked when no specific visit method applies to
      * the provided node.
      *
-     * @param node The [com.google.devtools.ksp.symbol.KSNode] being visited. Represents an element in the Kotlin symbol-processing model.
+     * @param node The [com.google.devtools.ksp.symbol.KSNode] being visited.
+     *             Represents an element in the Kotlin symbol-processing model.
      * @param data An auxiliary parameter of type [Unit] that carries additional data during the visit.
      * @return A nullable instance of type [T], which can represent a default or fallback result.
      */

@@ -66,8 +66,8 @@ fun KSAnnotated.findNestedAnnotationWithMarker(
         } else {
             // Check if the current annotation is marked with any of the markerKClass
             markerKClass.any { annotationDeclaration.getAnnotationsByType(it).any() } ||
-                    // Recursively check all annotations on the current annotation
-                    annotationDeclaration.findNestedAnnotationWithMarker(markerKClass, visited) != null
+                // Recursively check all annotations on the current annotation
+                annotationDeclaration.findNestedAnnotationWithMarker(markerKClass, visited) != null
         }
     }
 }

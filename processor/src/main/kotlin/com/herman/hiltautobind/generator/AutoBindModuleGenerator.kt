@@ -1,10 +1,8 @@
 package com.herman.hiltautobind.generator
 
-import com.google.devtools.ksp.symbol.KSFile
 import com.herman.hiltautobind.model.AutoBindSchema
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 
 class AutoBindModuleGenerator : HiltAutoBindModuleGenerator<AutoBindSchema>() {
 

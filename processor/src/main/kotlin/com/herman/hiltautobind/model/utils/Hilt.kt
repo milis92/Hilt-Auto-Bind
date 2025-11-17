@@ -9,7 +9,6 @@ import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.ElementsIntoSet
 import dagger.multibindings.IntoMap
 import dagger.multibindings.IntoSet
-import dagger.multibindings.Multibinds
 
 val HILT_SINGLETON_COMPONENT: ClassName =
     SingletonComponent::class.asClassName()
