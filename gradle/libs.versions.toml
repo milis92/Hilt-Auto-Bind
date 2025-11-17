@@ -14,7 +14,7 @@ autoservice-annotations = "1.1.1"
 autoservice-ksp = "1.2.0"
 
 kotlin-poet = "2.2.0"
-hilt = "2.57.1"
+hilt = "2.57.2"
 
 junit = "5.10.2"
 compile-testing = "0.11.0"
