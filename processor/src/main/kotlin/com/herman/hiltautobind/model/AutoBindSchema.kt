@@ -102,8 +102,8 @@ class AutoBindSchema(
         HiltAutoBindSchema.HiltModuleType.INTERFACE
 
     // Hilt Module class name.
-    override val hiltModuleClassName: ClassName
-        get() = ClassName(
+    override val hiltModuleClassName: ClassName =
+        ClassName(
             packageName = boundType.toClassName().packageName,
             simpleNames = listOf(
                 (if (isTestModule) HILT_TEST_MODULE_NAME_FORMAT else HILT_MODULE_NAME_FORMAT)
@@ -121,7 +121,6 @@ class AutoBindSchema(
                 annotatedClass.annotations.filterNot { annotations ->
                     annotations.annotationType.toTypeName() in listOf(BIND_ANNOTATION, TEST_BIND_ANNOTATION)
                 }.map { it.toAnnotationSpec(true) }.toList()
-
 
     // Hilt Test install in module to be replaced
     override val hiltReplacesModuleName: ClassName? =
@@ -153,18 +152,13 @@ class AutoBindSchema(
         }
 
     private val hiltMultibindingAnnotation: AnnotationSpec?
-        get() {
-            val argument = autoBindAnnotation.argumentTypeName(
-                autoBindAnnotation.bindTargetArgumentName
-            )?.toClassName()?.simpleName
-            val sample = AutoBindTarget.SET.name
-            val resolved = when (argument) {
-                sample -> HILT_INTO_SET_ANNOTATION
-                AutoBindTarget.MAP.name -> HILT_INTO_MAP_ANNOTATION
-                AutoBindTarget.INSTANCE.name -> null
-                else -> null
-            }
-            return resolved
+        get() = when (autoBindAnnotation.argumentTypeName(
+            autoBindAnnotation.bindTargetArgumentName
+        )?.toClassName()?.simpleName) {
+            AutoBindTarget.SET.name -> HILT_INTO_SET_ANNOTATION
+            AutoBindTarget.MAP.name -> HILT_INTO_MAP_ANNOTATION
+            AutoBindTarget.INSTANCE.name -> null
+            else -> null
         }
 
     private val KSAnnotation.superTypeArgumentName: String

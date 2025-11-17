@@ -8,7 +8,8 @@ class HiltAutoFactoryTest {
     private companion object {
         @JvmField
         @RegisterExtension
-        var compilerExtension = KotlinCompilationTestExtension()
+        var compilerExtension =
+            KotlinCompilationTestExtension(cleanUp = false)
     }
 
     @Test
@@ -55,8 +56,7 @@ class HiltAutoFactoryTest {
                 someAnnotationString = "someAnnotationString",
                 someAnnotationStringWithDefault = "someAnnotationStringWithDefault",
               )
-              public fun provideSomethingFactory(somethingElse: Set<@JvmSuppressWildcards SomethingElse>):
-                  Something = SomethingFactory(somethingElse);
+              public fun provideSomethingFactory(somethingElse: Set<@JvmSuppressWildcards SomethingElse>): Something = SomethingFactory(somethingElse);
             }
             """.trimIndent()
         )
@@ -80,7 +80,7 @@ class HiltAutoFactoryTest {
             interface Something
             
             @AutoFactory
-            fun ProvidesSomething(someArgument: String): Something = SomethingImpl(something)
+            fun ProvidesSomething(someArgument: String): Something = SomethingImpl(someArgument)
             
             internal class SomethingImpl(something: String) : Something
             """.trimIndent()
@@ -98,8 +98,7 @@ class HiltAutoFactoryTest {
             @InstallIn(SingletonComponent::class)
             public object Something_SingletonComponent_AutoFactoryModule {
               @Provides
-              public fun provideProvidesSomething(someArgument: String): Something =
-                  ProvidesSomething(someArgument);
+              public fun provideProvidesSomething(someArgument: String): Something = ProvidesSomething(someArgument);
             }
             """.trimIndent()
         )
@@ -109,7 +108,7 @@ class HiltAutoFactoryTest {
             sources = listOf(sourceFile),
             expectedContent = mapOf(
                 FileName("kotlin/Something_SingletonComponent_AutoFactoryModule.kt")
-                    to expectedSomethingElseProvider
+                        to expectedSomethingElseProvider
             )
         )
     }
@@ -428,7 +427,6 @@ class HiltAutoFactoryTest {
 
         val expectedTestComponent = ExpectedContent(
             """
-            import Something_SingletonComponent_AutoFactoryModule
             import dagger.Module
             import dagger.Provides
             import dagger.hilt.components.SingletonComponent
@@ -457,19 +455,21 @@ class HiltAutoFactoryTest {
     }
 
     @Test
-    fun autoFactoryGroupsProvidersOnTheSameModule() {
+    fun autofactorySeparatesQualifiedDependencies() {
         // Given
         val sourceFile = SourceFile.kotlin(
             name = "Main.kt",
             contents = """
             import com.herman.hiltautobind.annotations.autofactory.AutoFactory
+            import javax.inject.Named
             
             interface Something
                         
             @AutoFactory  
             fun SomethingFactory(): Something = object : Something {}
-                
-            @AutoFactory
+            
+            @Named("SomethingElse")
+            @AutoFactory 
             fun SomethingElseFactory(): Something = object : Something {}
             """.trimIndent()
         )
@@ -486,8 +486,23 @@ class HiltAutoFactoryTest {
             public object Something_SingletonComponent_AutoFactoryModule {
               @Provides
               public fun provideSomethingFactory(): Something = SomethingFactory();
+            }
+            """.trimIndent()
+        )
+
+        val expectedQualifiedContent = ExpectedContent(
+            """
+            import dagger.Module
+            import dagger.Provides
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import javax.inject.Named
             
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public object Something292266707_SingletonComponent_AutoFactoryModule {
               @Provides
+              @Named(`value` = "SomethingElse")
               public fun provideSomethingElseFactory(): Something = SomethingElseFactory();
             }
             """.trimIndent()
@@ -497,7 +512,8 @@ class HiltAutoFactoryTest {
         compilerExtension.compileAndAssert(
             sources = listOf(sourceFile),
             expectedContent = mapOf(
-                FileName("kotlin/Something_SingletonComponent_AutoFactoryModule.kt") to expectedContent
+                FileName("kotlin/Something_SingletonComponent_AutoFactoryModule.kt") to expectedContent,
+                FileName("kotlin/Something292266707_SingletonComponent_AutoFactoryModule.kt") to expectedQualifiedContent
             )
         )
     }
@@ -516,16 +532,13 @@ class HiltAutoFactoryTest {
                         
             @AutoFactory  
             fun SomethingFactory(): Something = object : Something {}
-                
-            @AutoFactory
-            fun SomethingElseFactory(): Something = object : Something {}
             """.trimIndent()
         )
 
         val expectedContent = ExpectedContent(
             """
             package com.herman.hiltautobind.test
-
+            
             import dagger.Module
             import dagger.Provides
             import dagger.hilt.InstallIn
@@ -536,9 +549,6 @@ class HiltAutoFactoryTest {
             public object Something_SingletonComponent_AutoFactoryModule {
               @Provides
               public fun provideSomethingFactory(): Something = SomethingFactory();
-            
-              @Provides
-              public fun provideSomethingElseFactory(): Something = SomethingElseFactory();
             }
             """.trimIndent()
         )
@@ -550,6 +560,240 @@ class HiltAutoFactoryTest {
                 FileName(
                     "kotlin/com/herman/hiltautobind/test/Something_SingletonComponent_AutoFactoryModule.kt"
                 ) to expectedContent
+            )
+        )
+    }
+
+    @Test
+    fun testAutoFactoryWithNamedQualifierReplacesQualifiedAutoFactoryModule() {
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactory
+            import com.herman.hiltautobind.annotations.autofactory.TestAutoFactory
+            import javax.inject.Named
+            
+            interface Something
+            
+            @AutoFactory
+            fun SomethingFactory(): Something = object : Something {}
+            
+            @Named("SomethingElse")
+            @AutoFactory
+            fun SomethingElseFactory(): Something = object : Something {}
+            
+            @Named("SomethingElse")
+            @TestAutoFactory
+            fun SomethingElseFactoryStub(): Something = object : Something {}
+            """.trimIndent()
+        )
+
+        val expectedUnqualifiedRuntime = ExpectedContent(
+            """
+            import dagger.Module
+            import dagger.Provides
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public object Something_SingletonComponent_AutoFactoryModule {
+              @Provides
+              public fun provideSomethingFactory(): Something = SomethingFactory();
+            }
+            """.trimIndent()
+        )
+
+        val expectedQualifiedRuntime = ExpectedContent(
+            """
+            import dagger.Module
+            import dagger.Provides
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import javax.inject.Named
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public object Something292266707_SingletonComponent_AutoFactoryModule {
+              @Provides
+              @Named(`value` = "SomethingElse")
+              public fun provideSomethingElseFactory(): Something = SomethingElseFactory();
+            }
+            """.trimIndent()
+        )
+
+        val expectedQualifiedTestModule = ExpectedContent(
+            """
+            import dagger.Module
+            import dagger.Provides
+            import dagger.hilt.components.SingletonComponent
+            import dagger.hilt.testing.TestInstallIn
+            import javax.inject.Named
+            
+            @Module
+            @TestInstallIn(
+              components = [SingletonComponent::class],
+              replaces = [Something292266707_SingletonComponent_AutoFactoryModule::class],
+            )
+            public object Something292266707_SingletonComponent_TestAutoFactoryModule {
+              @Provides
+              @Named(`value` = "SomethingElse")
+              public fun provideSomethingElseFactoryStub(): Something = SomethingElseFactoryStub();
+            }
+            """.trimIndent()
+        )
+
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(
+                FileName("kotlin/Something_SingletonComponent_AutoFactoryModule.kt") to expectedUnqualifiedRuntime,
+                FileName("kotlin/Something292266707_SingletonComponent_AutoFactoryModule.kt") to expectedQualifiedRuntime,
+                FileName("kotlin/Something292266707_SingletonComponent_TestAutoFactoryModule.kt") to expectedQualifiedTestModule,
+            )
+        )
+    }
+
+    @Test
+    fun autoFactoryPreservesMultipleParametersAndQualifiers() {
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactory
+            import javax.inject.Named
+            
+            interface Something
+            interface SomethingElse
+            
+            @AutoFactory
+            fun MakeSomething(
+                @Named("first") s: String,
+                number: Int,
+                deps: Set<@JvmSuppressWildcards SomethingElse>
+            ): Something = object : Something {}
+            """.trimIndent()
+        )
+
+        val expected = ExpectedContent(
+            """
+            import dagger.Module
+            import dagger.Provides
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import javax.inject.Named
+            import kotlin.Int
+            import kotlin.String
+            import kotlin.collections.Set
+            import kotlin.jvm.JvmSuppressWildcards
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public object Something_SingletonComponent_AutoFactoryModule {
+              @Provides
+              public fun provideMakeSomething(
+                @Named(`value` = "first") s: String,
+                number: Int,
+                deps: Set<@JvmSuppressWildcards SomethingElse>,
+              ): Something = MakeSomething(s, number, deps);
+            }
+            """.trimIndent()
+        )
+
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(
+                FileName("kotlin/Something_SingletonComponent_AutoFactoryModule.kt") to expected
+            )
+        )
+    }
+
+    @Test
+    fun autoFactorySupportsNonTopLevelMemberFunctions() {
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactory
+            import javax.inject.Inject
+            
+            interface Something
+            
+            class Container @Inject constructor() {
+                @AutoFactory
+                fun create(name: String): Something = object : Something {}
+            }
+            """.trimIndent()
+        )
+
+        val expected = ExpectedContent(
+            """
+            import dagger.Module
+            import dagger.Provides
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            import kotlin.String
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public object Something_SingletonComponent_AutoFactoryModule {
+              @Provides
+              public fun provideCreate(name: String, factory: Container): Something = factory.create(name);
+            }
+            """.trimIndent()
+        )
+
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(
+                FileName("kotlin/Something_SingletonComponent_AutoFactoryModule.kt") to expected
+            )
+        )
+    }
+
+    @Test
+    fun autoFactorySupportsFunctionsInCompanionObject() {
+        // Given
+        val sourceFile = SourceFile.kotlin(
+            name = "Main.kt",
+            contents = """
+            import com.herman.hiltautobind.annotations.autofactory.AutoFactory
+            
+            interface Something
+            
+            class Host {
+                companion object {
+                    @AutoFactory
+                    fun build(): Something = object : Something {}
+                }
+            }
+            """.trimIndent()
+        )
+
+        val expected = ExpectedContent(
+            """
+            import dagger.Module
+            import dagger.Provides
+            import dagger.hilt.InstallIn
+            import dagger.hilt.components.SingletonComponent
+            
+            @Module
+            @InstallIn(SingletonComponent::class)
+            public object Something_SingletonComponent_AutoFactoryModule {
+              @Provides
+              public fun provideBuild(): Something = Host.Companion.build();
+            }
+            """.trimIndent()
+        )
+
+        // Then
+        compilerExtension.compileAndAssert(
+            sources = listOf(sourceFile),
+            expectedContent = mapOf(
+                FileName("kotlin/Something_SingletonComponent_AutoFactoryModule.kt") to expected
             )
         )
     }

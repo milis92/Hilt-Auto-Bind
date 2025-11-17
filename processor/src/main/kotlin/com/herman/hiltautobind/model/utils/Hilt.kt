@@ -29,9 +29,6 @@ val HILT_INTO_MAP_ANNOTATION: AnnotationSpec =
 val HILT_ELEMENTS_INTO_SET_ANNOTATION: AnnotationSpec =
     AnnotationSpec.builder(ElementsIntoSet::class).build()
 
-val HILT_MULTIBINDS_ANNOTATION: AnnotationSpec =
-    AnnotationSpec.builder(Multibinds::class).build()
-
 val HILT_QUALIFIER_ANNOTATIONS =
     listOf(
         javax.inject.Qualifier::class,

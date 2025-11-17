@@ -6,6 +6,7 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.herman.hiltautobind.generator.AutoBindModuleGenerator
 import com.herman.hiltautobind.generator.AutoFactoryModuleGenerator
 import com.herman.hiltautobind.visitors.AutoBindVisitor
+import com.herman.hiltautobind.visitors.AutoFactoryVisitor
 
 internal class HiltAutoBindSymbolProcessor(
     private val codeGenerator: CodeGenerator,
@@ -30,9 +31,9 @@ internal class HiltAutoBindSymbolProcessor(
 
     private fun processFactoryMethods(resolver: Resolver) {
         val generator = AutoFactoryModuleGenerator()
-//        AutoFactoryVisitor(logger).collect(resolver).forEach { schema ->
-//            generator.generate(this@HiltAutoBindSymbolProcessor.generator, moduleName, schemas)
-//        }
+        AutoFactoryVisitor(logger).collect(resolver).forEach { schema ->
+            generator.generate(codeGenerator, schema)
+        }
     }
 
     @AutoService(SymbolProcessorProvider::class)

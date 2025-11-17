@@ -327,7 +327,7 @@ public object Something_SingletonComponent_AutoFactoryModule {
 With dagger multibindings, you do not have to explicitly provide a set/map container if the bound set/map is
 going to have at least one element. If the resulting set could be empty set container needs to be provided.
 Equivalent to `dagger.multibindings.Multibinds` you can provide a container for a set
-of values using `AutoFactoryTarget.MULTIBINDING_CONTAINER`
+of values using `AutoFactoryTarget.SET_VALUES`
 
 ```kotlin
 interface Something
@@ -345,7 +345,7 @@ The annotation processor will generate a following Hilt module
 public object Something_SingletonComponent_AutoFactoryModule {
     @Provides
     @Singleton
-    @Multibinds
+    @ElementsIntoSet
     public fun provideSomething(): Set<Something> = SomethingFactory();
 }
 ```
