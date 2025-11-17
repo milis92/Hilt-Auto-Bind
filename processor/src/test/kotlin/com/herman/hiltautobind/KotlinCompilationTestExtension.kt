@@ -15,19 +15,23 @@
  */
 package com.herman.hiltautobind
 
+import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.configureKsp
 import com.tschuchort.compiletesting.kspSourcesDir
+import dagger.hilt.processor.internal.HiltProcessingEnvConfigs
+import dagger.hilt.processor.internal.KspBaseProcessingStepProcessor
+import dagger.hilt.processor.internal.root.KspRootProcessor
+import dagger.internal.codegen.KspComponentProcessor
+import dagger.spi.model.DaggerElement
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
-import org.jetbrains.kotlin.config.LanguageVersion
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
-import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.createDirectories
@@ -36,8 +40,8 @@ import kotlin.test.assertEquals
 
 @OptIn(ExperimentalCompilerApi::class)
 class KotlinCompilationTestExtension(
-    private val cleanUp: Boolean = false,
-    private val incrementalKsp: Boolean = false,
+    private val cleanUp: Boolean = true,
+    private val incremental: Boolean = true,
 ) : BeforeAllCallback, BeforeEachCallback, AfterAllCallback {
 
     private lateinit var compilerOutputDir: Path
@@ -45,27 +49,30 @@ class KotlinCompilationTestExtension(
 
     private lateinit var compiler: KotlinCompilation
 
-    // private val kspCompilerSymbolsRegistrar = ServiceLoader.load(SymbolProcessorProvider::class.java)
-
     override fun beforeAll(context: ExtensionContext?) {
-        compilerOutputDir = Path.of("build", "kotlin-compile-test", context?.displayName).createDirectories()
+        compilerOutputDir = Path.of(
+            "build",
+            "kotlin-compile-test",
+            context?.displayName
+        ).createDirectories()
     }
 
     override fun beforeEach(context: ExtensionContext?) {
-        compilerWorkDirectory = File(
-            compilerOutputDir.toFile(),
+        compilerWorkDirectory = compilerOutputDir.resolve(
             context?.displayName ?: "Kotlin-Compilation"
-        ).toPath().createDirectories()
+        ).createDirectories()
 
         compiler = KotlinCompilation().apply {
             messageOutputStream = System.out
             inheritClassPath = true
             verbose = false
             workingDir = compilerWorkDirectory.toFile()
-            languageVersion = LanguageVersion.KOTLIN_1_9.versionString
-            configureKsp(useKsp2 = false) {
-                incremental = incrementalKsp
-                symbolProcessorProviders.add(HiltAutoBindSymbolProcessorProvider())
+
+            configureKsp {
+                incremental = this@KotlinCompilationTestExtension.incremental
+                symbolProcessorProviders.add(HiltAutoBindSymbolProcessor.Provider)
+                symbolProcessorProviders.add(KspRootProcessor.Provider())
+                symbolProcessorProviders.add(KspComponentProcessor.Provider())
                 loggingLevels = CompilerMessageSeverity.VERBOSE
             }
         }
@@ -105,7 +112,7 @@ class KotlinCompilationTestExtension(
             val file = compiler.kspSourcesDir.resolve(it.key.name)
             if (!file.exists()) {
                 error(
-                    "File $file doest not exist available files: ${listGeneratedKotlinFilePaths()}"
+                    "File $file doest not exist available files:\n ${listGeneratedKotlinFilePaths()}"
                 )
             } else {
                 assertEquals(it.value.content, file.readText().trim())
@@ -123,4 +130,6 @@ class KotlinCompilationTestExtension(
 value class FileName(val name: String)
 
 @JvmInline
-value class ExpectedContent(@Language("kotlin") val content: String)
+value class ExpectedContent(
+    @param:Language("kotlin") val content: String
+)

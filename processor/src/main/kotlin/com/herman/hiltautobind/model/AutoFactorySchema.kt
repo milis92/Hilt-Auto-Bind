@@ -5,6 +5,16 @@ import com.google.devtools.ksp.symbol.*
 import com.herman.hiltautobind.annotations.autofactory.AutoFactory
 import com.herman.hiltautobind.annotations.autofactory.AutoFactoryTarget
 import com.herman.hiltautobind.annotations.autofactory.TestAutoFactory
+import com.herman.hiltautobind.model.utils.HILT_ELEMENTS_INTO_SET_ANNOTATION
+import com.herman.hiltautobind.model.utils.HILT_INTO_MAP_ANNOTATION
+import com.herman.hiltautobind.model.utils.HILT_INTO_SET_ANNOTATION
+import com.herman.hiltautobind.model.utils.HILT_MODULE_NAME_SEPARATOR
+import com.herman.hiltautobind.model.utils.HILT_MULTIBINDS_ANNOTATION
+import com.herman.hiltautobind.model.utils.HILT_PROVIDES_ANNOTATION
+import com.herman.hiltautobind.model.utils.HILT_SINGLETON_COMPONENT
+import com.herman.hiltautobind.model.utils.argumentTypeName
+import com.herman.hiltautobind.model.utils.toClassName
+import com.herman.hiltautobind.model.utils.toParameterSpec
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -13,7 +23,7 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 @Suppress("LongParameterList")
 class AutoFactorySchema(
     override val containingFile: KSFile,
-    override val originalDeclaration: KSDeclaration,
+    val originalDeclaration: KSDeclaration,
 ) : HiltAutoBindSchema {
 
     constructor(functionDeclaration: KSFunctionDeclaration) : this(
@@ -32,7 +42,7 @@ class AutoFactorySchema(
         } else if (hiltMultibindingAnnotation == HILT_MULTIBINDS_ANNOTATION) {
             require(annotatedFunctionReturnType?.rawType == SET || annotatedFunctionReturnType?.rawType == MAP) {
                 "Function annotated with @AutoFactory(target = AutoFactoryTarget.MULTIBINDING_CONTAINER)" +
-                    " must return a Set or a Map"
+                        " must return a Set or a Map"
             }
         }
     }
@@ -55,7 +65,7 @@ class AutoFactorySchema(
         }
 
     override val hiltComponent: TypeName
-        get() = autoFactoryAnnotation.getArgumentClassName(
+        get() = autoFactoryAnnotation.argumentTypeName(
             autoFactoryAnnotation.getHiltComponentArgumentName
         ) ?: HILT_SINGLETON_COMPONENT
 
@@ -67,7 +77,7 @@ class AutoFactorySchema(
     private val hiltModuleClassSimpleName
         get() = annotatedFunction.returnType?.resolve()?.toClassName()?.simpleNames?.joinToString("")
 
-    override val hiltModuleName: TypeName = ClassName(
+    override val hiltModuleClassName: ClassName = ClassName(
         packageName = containingFile.packageName.asString(),
         simpleNames = listOf(
             (if (isTestModule) HILT_TEST_MODULE_NAME_FORMAT else HILT_MODULE_NAME_FORMAT)
@@ -75,7 +85,7 @@ class AutoFactorySchema(
         )
     )
 
-    override val hiltReplacesModuleName: TypeName
+    override val hiltReplacesModuleName: ClassName
         get() = ClassName(
             packageName = containingFile.packageName.asString(),
             simpleNames = listOf(
@@ -85,8 +95,9 @@ class AutoFactorySchema(
 
     override val hiltFunctionAnnotations: List<AnnotationSpec>
         get() = listOfNotNull(
-            HILT_PROVIDES_ANNOTATION.takeIf { hiltMultibindingAnnotation != HILT_MULTIBINDS_ANNOTATION },
-            hiltMultibindingAnnotation
+            HILT_PROVIDES_ANNOTATION.takeIf {
+                hiltMultibindingAnnotation != HILT_MULTIBINDS_ANNOTATION
+            }, hiltMultibindingAnnotation
         ) + annotatedFunction.annotations.filterNot { annotations ->
             annotations.annotationType.toTypeName() in listOf(AUTO_FACTORY_ANNOTATION, TEST_AUTO_FACTORY_ANNOTATION)
         }.map { it.toAnnotationSpec(true) }.toList()
@@ -96,7 +107,7 @@ class AutoFactorySchema(
 
     private val hiltMultibindingAnnotation: AnnotationSpec?
         get() = when (
-            autoFactoryAnnotation.getArgumentClassName(
+            autoFactoryAnnotation.argumentTypeName(
                 autoFactoryAnnotation.getAutoBindTargetArgumentName
             )?.toClassName()?.simpleName
         ) {
@@ -108,7 +119,7 @@ class AutoFactorySchema(
             else -> null
         }
 
-    override val isTestModule: Boolean
+    val isTestModule: Boolean
         get() = autoFactoryAnnotation.annotationType.toTypeName() == TEST_AUTO_FACTORY_ANNOTATION
 
     private val KSAnnotation.getHiltComponentArgumentName: String

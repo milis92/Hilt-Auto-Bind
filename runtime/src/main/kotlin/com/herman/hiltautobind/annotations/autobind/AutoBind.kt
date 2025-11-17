@@ -12,18 +12,18 @@ import kotlin.reflect.KClass
  */
 enum class AutoBindTarget {
     /**
-     * Bind specified type explicitly
+     * Bind a specified type explicitly
      */
     INSTANCE,
 
     /**
-     * Bind specified type to a set of super types
+     * Bind a specified type to a set of super types
      * @see <a href="https://dagger.dev/multibindings#set-multibindings">Set multibinding</a>
      */
     SET,
 
     /**
-     * Bind specified type to a map of super types
+     * Bind a specified type to a map of super types
      * @see <a href="https://dagger.dev/multibindings#map-multibindings">Map multibinding</a>
      */
     MAP,

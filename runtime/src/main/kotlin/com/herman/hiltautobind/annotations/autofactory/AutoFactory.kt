@@ -12,7 +12,7 @@ import kotlin.reflect.KClass
  */
 enum class AutoFactoryTarget {
     /**
-     * Bind specified type explicitly
+     * Bind a specified type explicitly
      */
     INSTANCE,
 
@@ -23,7 +23,7 @@ enum class AutoFactoryTarget {
     SET,
 
     /**
-     * Bind specified type to a map of super types
+     * Bind a specified type to a map of super types
      * @see <a href="https://dagger.dev/multibindings#map-multibindings">Map multibinding</a>
      */
     MAP,
