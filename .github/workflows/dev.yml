@@ -3,7 +3,10 @@ name: Dev
 on:
   pull_request:
     branches:
-      - dev
+      - main
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
