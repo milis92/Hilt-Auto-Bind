@@ -1,15 +1,51 @@
 version: 2
 updates:
-    - package-ecosystem: "gradle"
-      directory: "/"
-      schedule:
-          interval: "daily"
-      rebase-strategy: "disabled"
-      target-branch: main
+  # --- Gradle Dependency Updates ---
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps-gradle)" # Use a conventional commit prefix
+      include: "scope"             # Include the package name in the commit message
 
-    - package-ecosystem: "github-actions"
-      directory: "/"
-      schedule:
-          interval: "weekly"
-      rebase-strategy: "disabled"
-      target-branch: main
+    groups:
+      # Group critical libraries for careful review of minor updates
+      core-libraries-minor-updates:
+        patterns:
+          - "org.jetbrains.kotlin"
+          - "com.google.dagger:*"
+          - "com.google.devtools.ksp:*"
+        update-types:
+          - "minor"
+
+      # Group all other general development/utility minor updates
+      all-other-minor-updates:
+        exclude-patterns:
+          - "org.jetbrains.kotlin"
+          - "com.google.dagger:*"
+          - "com.google.devtools.ksp:*"
+        update-types:
+          - "minor"
+
+      # Group all patch updates together for easy merging
+      all-patch-updates:
+        update-types:
+          - "patch"
+
+  # --- GitHub Actions Updates ---
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Using default rebase strategy (auto) and targeting the default branch for simplicity
+
+    # Configure commit messages
+    commit-message:
+      prefix: "chore(deps-actions)"
+      include: "scope"
+
+    groups:
+      github-actions-updates:
+        patterns:
+          - "*"
