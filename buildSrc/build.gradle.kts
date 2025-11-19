@@ -14,6 +14,8 @@ dependencies {
     )
     implementation(libs.kotlin.gradle)
     implementation(libs.kotlin.ksp)
+    implementation(libs.android.gradle)
+    implementation(libs.hilt.plugin)
     implementation(libs.maven.publish)
     implementation(libs.kotlin.dokka)
     implementation(libs.gradle.buildConfig)

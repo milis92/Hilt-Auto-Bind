@@ -4,6 +4,7 @@ import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import dagger.Binds
+import dagger.MapKey
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.ElementsIntoSet
@@ -33,5 +34,8 @@ val HILT_QUALIFIER_ANNOTATIONS =
         javax.inject.Qualifier::class,
         jakarta.inject.Qualifier::class
     )
+
+val HILT_MAP_KEY_ANNOTATION =
+    MapKey::class
 
 const val HILT_MODULE_NAME_SEPARATOR = "_"

@@ -181,11 +181,18 @@ By default, the annotation processor binds a value as an instance of the specifi
 For dagger multibindings, you can bind a value to a set or a map of supertypes using the `AutoBindTarget`
 parameter.
 
+> [!WARNING]  
+> Auto bind generates a single Module per implementation type. This is because we want to replace only a single module
+> with @TestAutoBind annotations and not all dependencies grouped by a supertype. 
+> This requires all modules to have a unique name, so you have to provide the `uniqeKey` if the target is `SET`.
+> 
+> This is not required with the MAP or Qualified bindings.
+
 ```kotlin
 interface AnalyticsService
 
 @Singleton
-@AutoBind(target = AutoBindTarget.SET) // or AutoBindTarget.MAP
+@AutoBind(target = AutoBindTarget.SET, uniqeKey = "analytics") // or AutoBindTarget.MAP
 class AnalyticsServiceImpl @Inject constructor() : AnalyticsService
 ```
 
@@ -343,9 +350,12 @@ By default, the annotation processor generates a module that provides a single i
 For dagger multibindings, you can bind a value to a set or a map of supertypes using
 the `AutoFactoryTarget` parameter.
 
----
-
-#### Set or map multibindings
+> [!WARNING]  
+> Auto bind generates a single Module per factory function. This is because we want to replace only a single module
+> with @TestAutoFactory annotations and not all dependencies grouped by a supertype.
+> This requires all modules to have a unique name, so you have to provide the `uniqeKey` if the target is `SET`.
+>
+> This is not required with the MAP or Qualified bindings.
 
 ```kotlin
 interface AnalyticsService
@@ -552,7 +562,7 @@ Use `@TestAutoBind` to create a test binding that replaces the production bindin
 
 ### Example:
 
-#### Production code (Analytics example):
+#### Production code:
 
 ```kotlin
 interface AnalyticsService {
@@ -601,7 +611,8 @@ public interface AnalyticsService_SingletonComponent_TestModule {
 
 #### Qualified bindings
 
-You can also replace qualified bindings. In production, you might have multiple implementations qualified with @Named; in tests, you can provide a qualified stub that replaces exactly that binding:
+You can also replace qualified bindings. In production, you might have multiple implementations qualified with @Named; 
+in tests, you can provide a qualified stub that replaces exactly that binding:
 
 ```kotlin
 interface AnalyticsService

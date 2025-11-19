@@ -3,9 +3,11 @@ package com.herman.hiltautobind.model
 import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.symbol.*
 import com.herman.hiltautobind.annotations.autobind.*
+import com.herman.hiltautobind.annotations.autobind.TestAutoBind
 import com.herman.hiltautobind.model.utils.HILT_BINDS_ANNOTATION
 import com.herman.hiltautobind.model.utils.HILT_INTO_MAP_ANNOTATION
 import com.herman.hiltautobind.model.utils.HILT_INTO_SET_ANNOTATION
+import com.herman.hiltautobind.model.utils.HILT_MAP_KEY_ANNOTATION
 import com.herman.hiltautobind.model.utils.HILT_MODULE_NAME_SEPARATOR
 import com.herman.hiltautobind.model.utils.HILT_QUALIFIER_ANNOTATIONS
 import com.herman.hiltautobind.model.utils.HILT_SINGLETON_COMPONENT
@@ -14,6 +16,7 @@ import com.herman.hiltautobind.model.utils.argumentTypeNameIfNotDefault
 import com.herman.hiltautobind.model.utils.getFirstNonAnySuperType
 import com.herman.hiltautobind.model.utils.findNestedAnnotationWithMarker
 import com.herman.hiltautobind.model.utils.getStableContentHash
+import com.herman.hiltautobind.model.utils.rawArgumentValue
 import com.herman.hiltautobind.model.utils.toClassName
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
@@ -42,6 +45,25 @@ class AutoBindSchema(
         ) {
             "No valid @AutoBind or @TestAutoBind annotation found on class ${annotatedClass.simpleName}"
         }
+
+    /**
+     * Represents a unique key associated with the `AutoBindSchema` context.
+     * This key is essential for differentiating between multiple schemas binding the same supertype,
+     * for example, set, map or qualified bindings
+     */
+    private val uniquenessKey: String =
+        autoBindAnnotation.rawArgumentValue(
+            autoBindAnnotation.uniquenessKeyArgumentName
+        )?.toString() ?: ""
+
+    init {
+        if (hiltMultibindingAnnotation == HILT_INTO_SET_ANNOTATION) {
+            require(uniquenessKey.isNotEmpty()) {
+                "Classes annotated with @AutoBind(target = AutoBindTarget.SET) must provide a uniqueKey" +
+                    " for this binding"
+            }
+        }
+    }
 
     /**
      * Resolved type of the class providing the implementation for the [boundType]
@@ -89,9 +111,13 @@ class AutoBindSchema(
             autoBindAnnotation.superTypeArgumentName
         ) ?: annotatedClass.getFirstNonAnySuperType() ?: annotatedClass.toClassName()
 
+    private val isTestModule: Boolean by lazy {
+        autoBindAnnotation.annotationType.toTypeName() == TEST_BIND_ANNOTATION
+    }
+
     // Hilt module `InstallIn` component.
-    override val hiltComponent: TypeName
-        get() = autoBindAnnotation.argumentTypeName(
+    override val hiltComponent: TypeName =
+        autoBindAnnotation.argumentTypeName(
             autoBindAnnotation.hiltComponentArgumentName
         ) ?: HILT_SINGLETON_COMPONENT
 
@@ -124,24 +150,19 @@ class AutoBindSchema(
                 annotations.annotationType.toTypeName() in listOf(BIND_ANNOTATION, TEST_BIND_ANNOTATION)
             }.map { it.toAnnotationSpec(true) }.toList()
 
-    // Hilt Test install in module to be replaced
+    // Hilt TestInstallIn in module to be replaced
     override val hiltReplacesModuleName: ClassName? =
         if (isTestModule) {
             ClassName(
                 packageName = boundType.toClassName().packageName,
                 simpleNames = listOf(
-                    HILT_MODULE_NAME_FORMAT.format(
-                        simpleHiltModuleName,
-                        hiltComponent.toClassName().simpleName
-                    )
+                    HILT_MODULE_NAME_FORMAT
+                        .format(simpleHiltModuleName, hiltComponent.toClassName().simpleName)
                 )
             )
         } else {
             null
         }
-
-    private val isTestModule: Boolean
-        get() = autoBindAnnotation.annotationType.toTypeName() == TEST_BIND_ANNOTATION
 
     private val simpleHiltModuleName: String
         get() {
@@ -149,11 +170,17 @@ class AutoBindSchema(
                 .simpleName
 
             val qualifier = annotatedClass.findNestedAnnotationWithMarker(
-                HILT_QUALIFIER_ANNOTATIONS,
+                HILT_QUALIFIER_ANNOTATIONS + HILT_MAP_KEY_ANNOTATION,
                 skip = setOf(autoBindAnnotation)
             )?.getStableContentHash() ?: ""
 
-            return boundTypeSimpleName + qualifier
+            val uniqueIdentifier = if (uniquenessKey.isEmpty()) {
+                ""
+            } else {
+                uniquenessKey.hashCode().toString().removePrefix("-")
+            }
+
+            return boundTypeSimpleName + uniqueIdentifier + qualifier
         }
 
     private val hiltMultibindingAnnotation: AnnotationSpec?
@@ -187,6 +214,13 @@ class AutoBindSchema(
             AutoBind::class.asTypeName() -> AutoBind::target.name
             TestAutoBind::class.asTypeName() -> TestAutoBind::target.name
             else -> error("Annotation $annotationType has no target argument")
+        }
+
+    private val KSAnnotation.uniquenessKeyArgumentName: String
+        get() = when (annotationType.toTypeName()) {
+            AutoBind::class.asTypeName() -> AutoBind::uniqueKey.name
+            TestAutoBind::class.asTypeName() -> TestAutoBind::uniqueKey.name
+            else -> error("Annotation $annotationType has no uniquenessKey argument")
         }
 
     companion object {

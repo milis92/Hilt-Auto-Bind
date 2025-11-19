@@ -15,16 +15,12 @@
  */
 package com.herman.hiltautobind
 
-import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.configureKsp
 import com.tschuchort.compiletesting.kspSourcesDir
-import dagger.hilt.processor.internal.HiltProcessingEnvConfigs
-import dagger.hilt.processor.internal.KspBaseProcessingStepProcessor
 import dagger.hilt.processor.internal.root.KspRootProcessor
 import dagger.internal.codegen.KspComponentProcessor
-import dagger.spi.model.DaggerElement
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
@@ -70,7 +66,7 @@ class KotlinCompilationTestExtension(
 
             configureKsp {
                 incremental = this@KotlinCompilationTestExtension.incremental
-                symbolProcessorProviders.add(HiltAutoBindSymbolProcessor.Provider)
+                symbolProcessorProviders.add(HiltAutoBindSymbolProcessor.Factory)
                 symbolProcessorProviders.add(KspRootProcessor.Provider())
                 symbolProcessorProviders.add(KspComponentProcessor.Provider())
                 loggingLevels = CompilerMessageSeverity.VERBOSE

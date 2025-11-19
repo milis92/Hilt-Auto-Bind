@@ -10,6 +10,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
+        google()
     }
 }
 
@@ -50,4 +51,5 @@ develocity {
 include(
     "runtime",
     "processor",
+    "sample",
 )

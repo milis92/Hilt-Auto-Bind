@@ -319,7 +319,7 @@ class HiltAutoBindTest {
             
             interface Something
             
-            @AutoBind(target = AutoBindTarget.SET)
+            @AutoBind(target = AutoBindTarget.SET, uniqueKey ="something")
             class SomethingImpl : Something
             """.trimIndent()
         )
@@ -334,7 +334,7 @@ class HiltAutoBindTest {
             
             @Module
             @InstallIn(SingletonComponent::class)
-            public interface Something_SingletonComponent_Module {
+            public interface Something564885382_SingletonComponent_Module {
               @Binds
               @IntoSet
               public fun bindSomethingImpl(implementation: SomethingImpl): Something
@@ -346,7 +346,7 @@ class HiltAutoBindTest {
         compilerExtension.compileAndAssert(
             sources = listOf(sourceFile),
             expectedContent = mapOf(
-                FileName("kotlin/Something_SingletonComponent_Module.kt") to expectedContent
+                FileName("kotlin/Something564885382_SingletonComponent_Module.kt") to expectedContent
             )
         )
     }
@@ -380,7 +380,7 @@ class HiltAutoBindTest {
             
             @Module
             @InstallIn(SingletonComponent::class)
-            public interface Something_SingletonComponent_Module {
+            public interface Something1426668337_SingletonComponent_Module {
               @Binds
               @IntoMap
               @StringKey(`value` = "foo")
@@ -393,7 +393,7 @@ class HiltAutoBindTest {
         compilerExtension.compileAndAssert(
             sources = listOf(sourceFile),
             expectedContent = mapOf(
-                FileName("kotlin/Something_SingletonComponent_Module.kt") to expectedContent
+                FileName("kotlin/Something1426668337_SingletonComponent_Module.kt") to expectedContent
             )
         )
     }

@@ -246,7 +246,7 @@ class HiltAutoFactoryTest {
             
             interface Something
             
-            @AutoFactory(target = AutoFactoryTarget.SET)
+            @AutoFactory(target = AutoFactoryTarget.SET, uniqueKey = "something")
             fun SomethingFactory(): Something = object : Something {}
             """.trimIndent()
         )
@@ -261,7 +261,7 @@ class HiltAutoFactoryTest {
             
             @Module
             @InstallIn(SingletonComponent::class)
-            public object Something_SingletonComponent_AutoFactoryModule {
+            public object Something564885382_SingletonComponent_AutoFactoryModule {
               @Provides
               @IntoSet
               public fun provideSomethingFactory(): Something = SomethingFactory();
@@ -272,7 +272,7 @@ class HiltAutoFactoryTest {
         compilerExtension.compileAndAssert(
             sources = listOf(sourceFile),
             expectedContent = mapOf(
-                FileName("kotlin/Something_SingletonComponent_AutoFactoryModule.kt") to provideSomething,
+                FileName("kotlin/Something564885382_SingletonComponent_AutoFactoryModule.kt") to provideSomething,
             )
         )
     }
@@ -349,7 +349,7 @@ class HiltAutoFactoryTest {
             
             @Module
             @InstallIn(SingletonComponent::class)
-            public object Something_SingletonComponent_AutoFactoryModule {
+            public object Something1426668337_SingletonComponent_AutoFactoryModule {
               @Provides
               @IntoMap
               @StringKey(`value` = "foo")
@@ -361,7 +361,7 @@ class HiltAutoFactoryTest {
         compilerExtension.compileAndAssert(
             sources = listOf(sourceFile),
             expectedContent = mapOf(
-                FileName("kotlin/Something_SingletonComponent_AutoFactoryModule.kt") to provideSomething,
+                FileName("kotlin/Something1426668337_SingletonComponent_AutoFactoryModule.kt") to provideSomething,
             )
         )
     }

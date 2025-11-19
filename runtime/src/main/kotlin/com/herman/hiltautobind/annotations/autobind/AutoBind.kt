@@ -175,6 +175,7 @@ annotation class AutoBind(
     val component: KClass<*> = SingletonComponent::class,
     val superType: KClass<*> = Any::class,
     val target: AutoBindTarget = AutoBindTarget.INSTANCE,
+    val uniqueKey: String = ""
 )
 
 /**
@@ -224,4 +225,5 @@ annotation class TestAutoBind(
     val component: KClass<*> = SingletonComponent::class,
     val superType: KClass<*> = Any::class,
     val target: AutoBindTarget = AutoBindTarget.INSTANCE,
+    val uniqueKey: String = ""
 )

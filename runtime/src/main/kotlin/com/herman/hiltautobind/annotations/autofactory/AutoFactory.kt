@@ -220,6 +220,7 @@ enum class AutoFactoryTarget {
 annotation class AutoFactory(
     val component: KClass<*> = SingletonComponent::class,
     val target: AutoFactoryTarget = AutoFactoryTarget.INSTANCE,
+    val uniqueKey: String = ""
 )
 
 /**
@@ -265,4 +266,5 @@ annotation class AutoFactory(
 annotation class TestAutoFactory(
     val component: KClass<*> = SingletonComponent::class,
     val target: AutoFactoryTarget = AutoFactoryTarget.INSTANCE,
+    val uniqueKey: String = ""
 )

@@ -81,7 +81,7 @@ fun KSAnnotation.getStableContentHash(): String {
             "${arg.name?.asString()}:${getStableValueRepresentation(arg.value)}"
         }
     val stableIdentifier = "$annotationFqn($argsString)"
-    return stableIdentifier.hashCode().toString()
+    return stableIdentifier.hashCode().toString().removePrefix("-")
 }
 
 // Helper function for stable value representation
@@ -114,4 +114,8 @@ fun KSValueParameter.toParameterSpec(): ParameterSpec {
 }
 
 fun TypeName.toClassName(): ClassName =
-    (this as? ClassName) ?: ClassName.bestGuess(this.toString())
+    when (this) {
+        is ClassName -> this
+        is ParameterizedTypeName -> rawType.topLevelClassName()
+        else -> ClassName.bestGuess(this.toString())
+    }

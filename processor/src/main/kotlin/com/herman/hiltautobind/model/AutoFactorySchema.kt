@@ -8,6 +8,7 @@ import com.herman.hiltautobind.annotations.autofactory.TestAutoFactory
 import com.herman.hiltautobind.model.utils.HILT_ELEMENTS_INTO_SET_ANNOTATION
 import com.herman.hiltautobind.model.utils.HILT_INTO_MAP_ANNOTATION
 import com.herman.hiltautobind.model.utils.HILT_INTO_SET_ANNOTATION
+import com.herman.hiltautobind.model.utils.HILT_MAP_KEY_ANNOTATION
 import com.herman.hiltautobind.model.utils.HILT_MODULE_NAME_SEPARATOR
 import com.herman.hiltautobind.model.utils.HILT_PROVIDES_ANNOTATION
 import com.herman.hiltautobind.model.utils.HILT_QUALIFIER_ANNOTATIONS
@@ -15,6 +16,7 @@ import com.herman.hiltautobind.model.utils.HILT_SINGLETON_COMPONENT
 import com.herman.hiltautobind.model.utils.argumentTypeName
 import com.herman.hiltautobind.model.utils.findNestedAnnotationWithMarker
 import com.herman.hiltautobind.model.utils.getStableContentHash
+import com.herman.hiltautobind.model.utils.rawArgumentValue
 import com.herman.hiltautobind.model.utils.toClassName
 import com.herman.hiltautobind.model.utils.toParameterSpec
 import com.squareup.kotlinpoet.*
@@ -48,6 +50,11 @@ class AutoFactorySchema(
             "No valid @AutoFactory or @TestAutoFactory annotation found on ${annotatedFunction.simpleName}"
         }
 
+    private val uniquenessKey: String =
+        autoFactoryAnnotation.rawArgumentValue(
+            autoFactoryAnnotation.uniquenessKeyArgumentName
+        )?.toString() ?: ""
+
     /**
      * Holds the name of the factory function that is providing the actual instances for this module
      */
@@ -74,7 +81,15 @@ class AutoFactorySchema(
             require(annotatedFunctionReturnType?.rawType == SET) {
                 "Function annotated with @AutoFactory(target = AutoFactoryTarget.SET_VALUES) must return a Set"
             }
+        } else if (hiltMultibindingAnnotation == HILT_INTO_SET_ANNOTATION) {
+            require(uniquenessKey.isNotBlank()) {
+                "Function annotated with @AutoFactory(target = AutoFactoryTarget.SET) must provide a uniqueKey"
+            }
         }
+    }
+
+    private val isTestModule: Boolean by lazy {
+        autoFactoryAnnotation.annotationType.toTypeName() == TEST_AUTO_FACTORY_ANNOTATION
     }
 
     // Hilt module `InstallIn` component.
@@ -102,9 +117,11 @@ class AutoFactorySchema(
 
     // Hilt Module provider function name.
     override val hiltFunctionName: String =
-        "$PROVIDES_METHOD_NAME_PREFIX${factorFunctionName.replaceFirstChar {
-            if (it.isLowerCase()) it.titlecase() else it.toString()
-        }}"
+        "$PROVIDES_METHOD_NAME_PREFIX${
+            factorFunctionName.replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase() else it.toString()
+            }
+        }"
 
     // Hilt Module provider function annotations
     override val hiltFunctionAnnotations: List<AnnotationSpec> = listOfNotNull(
@@ -117,7 +134,7 @@ class AutoFactorySchema(
     override val hiltReplacesModuleName: ClassName? =
         if (isTestModule) {
             ClassName(
-                packageName = annotatedFunction.packageName.asString(),
+                packageName = factoryFunctionReturnType.toClassName().packageName,
                 simpleNames = listOf(
                     HILT_MODULE_NAME_FORMAT.format(simpleHiltModuleName, hiltComponent.toClassName().simpleName)
                 )
@@ -139,25 +156,28 @@ class AutoFactorySchema(
             else -> null
         }
 
-    private val isTestModule: Boolean
-        get() = autoFactoryAnnotation.annotationType.toTypeName() == TEST_AUTO_FACTORY_ANNOTATION
-
     private val simpleHiltModuleName: String
         get() {
             val boundTypeSimpleName =
                 (
                     (factoryFunctionReturnType as? ParameterizedTypeName)?.rawType
                         ?: factoryFunctionReturnType.toClassName()
-                    )
-                    .simpleName
+                    ).simpleName
 
             val qualifier = annotatedFunction.findNestedAnnotationWithMarker(
-                HILT_QUALIFIER_ANNOTATIONS,
+                HILT_QUALIFIER_ANNOTATIONS + HILT_MAP_KEY_ANNOTATION,
                 skip = setOf(autoFactoryAnnotation)
             )?.getStableContentHash() ?: ""
 
-            return boundTypeSimpleName + qualifier
+            val uniqueIdentifier = if (uniquenessKey.isEmpty()) {
+                ""
+            } else {
+                uniquenessKey.hashCode().toString().removePrefix("-")
+            }
+
+            return (boundTypeSimpleName + uniqueIdentifier + qualifier)
         }
+
     private val KSAnnotation.hiltComponentArgumentName: String
         get() = when (annotationType.toTypeName()) {
             AutoFactory::class.asTypeName() -> AutoFactory::component.name
@@ -170,6 +190,13 @@ class AutoFactorySchema(
             AutoFactory::class.asTypeName() -> AutoFactory::target.name
             TestAutoFactory::class.asTypeName() -> TestAutoFactory::target.name
             else -> error("Annotation $annotationType has no target argument")
+        }
+
+    private val KSAnnotation.uniquenessKeyArgumentName: String
+        get() = when (annotationType.toTypeName()) {
+            AutoFactory::class.asTypeName() -> AutoFactory::uniqueKey.name
+            TestAutoFactory::class.asTypeName() -> TestAutoFactory::uniqueKey.name
+            else -> error("Annotation $annotationType has no uniqueKey argument")
         }
 
     companion object {

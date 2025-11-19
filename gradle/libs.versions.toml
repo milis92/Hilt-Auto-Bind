@@ -1,7 +1,7 @@
 [versions]
 java = "21"
 kotlin = "2.2.21"
-
+agp = "8.12.3"
 ksp = "2.3.2"
 
 detekt = "1.23.6"
@@ -14,10 +14,14 @@ autoservice-annotations = "1.1.1"
 autoservice-ksp = "1.2.0"
 
 kotlin-poet = "2.2.0"
-hilt = "2.57.1"
+hilt = "2.57.2"
 
 junit = "5.10.2"
 compile-testing = "0.11.0"
+
+androidx-test = "1.7.0"
+androidx-test-ext = "1.3.0"
+roboelectric = "4.16"
 
 [libraries]
 # build
@@ -29,16 +33,23 @@ kotlin-poet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotli
 
 kotlin-dokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
 kotlin-dokka-versioning = { module = "org.jetbrains.dokka:versioning-plugin", version.ref = "dokka" }
+
 maven-publish = { module = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin", version.ref = "maven-publish" }
 gradle-buildConfig = { module = "com.github.gmazzo.buildconfig:plugin", version.ref = "build-config" }
+
 detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 
 google-autoService-core = { module = "dev.zacsweers.autoservice:auto-service-ksp", version.ref = "autoservice-ksp" }
 google-autoService-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "autoservice-annotations" }
 
+hilt-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt"}
 hilt-core = { module = "com.google.dagger:hilt-core", version.ref = "hilt" }
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-processor = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+hilt-android-testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt" }
+
+android-gradle = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 
 # testing
 junit = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -48,10 +59,24 @@ kotlin-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 compileTesting = { module = "dev.zacsweers.kctfork:core", version.ref = "compile-testing" }
 compileTesting-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "compile-testing" }
 
+androidx-test-core = { module = "androidx.test:core-ktx", version.ref = "androidx-test" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test" }
+androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-test" }
+androidx-text-ext = { module = "androidx.test.ext:junit-ktx", version.ref = "androidx-test-ext" }
+roboelectric = { module = "org.robolectric:robolectric", version.ref = "roboelectric" }
+
 [plugins]
 
 [bundles]
 kotlin-poet = [
    "kotlin-poet",
    "kotlin-poet-ksp"
+]
+
+androidx-test = [
+   "androidx-test-core",
+   "androidx-test-rules",
+   "androidx-test-runner",
+   "androidx-text-ext",
+   "roboelectric"
 ]
