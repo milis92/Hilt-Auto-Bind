@@ -36,9 +36,14 @@ internal class HiltAutoBindSymbolProcessor(
         }
     }
 
-    @AutoService(SymbolProcessorProvider::class)
-    companion object Provider : SymbolProcessorProvider {
+    companion object Factory : SymbolProcessorProvider {
         override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor =
             HiltAutoBindSymbolProcessor(environment.codeGenerator, environment.logger)
     }
+}
+
+@AutoService(SymbolProcessorProvider::class)
+class HiltAutoBindSymbolProcessorProvider : SymbolProcessorProvider {
+    override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor =
+        HiltAutoBindSymbolProcessor.create(environment)
 }
