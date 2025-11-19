@@ -5,7 +5,7 @@ agp = "8.12.3"
 ksp = "2.3.2"
 
 detekt = "1.23.6"
-dokka = "1.9.20"
+dokka = "2.1.0"
 
 maven-publish = "0.35.0"
 build-config = "5.7.1"
