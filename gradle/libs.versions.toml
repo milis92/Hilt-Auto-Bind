@@ -1,7 +1,7 @@
 [versions]
 java = "21"
 kotlin = "2.2.21"
-agp = "8.12.3"
+agp = "8.13.1"
 ksp = "2.3.2"
 
 detekt = "1.23.6"
